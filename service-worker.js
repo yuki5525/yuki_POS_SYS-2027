@@ -2,7 +2,7 @@
    Service Worker · 离线缓存
    注意：每次发布新版本，务必 bump CACHE_NAME，否则用户端永远看到旧页面。
    ========================================================================== */
-var CACHE_NAME = 'pos-cashier-v3';   // v3：台桌管理页 + DI/TA 单号规则
+var CACHE_NAME = 'pos-cashier-v4';   // v4：结算计算器 + 操作员身份 + 三级分类
 
 var PRECACHE = [
   './',

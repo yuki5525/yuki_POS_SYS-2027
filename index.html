@@ -699,7 +699,7 @@ svg{ display:block; }
 .table-card.status-pending .tc-state{ color:var(--danger); }
 .table-card.status-pending .tc-amt{ color:var(--danger); }
 
-/* 外卖独立大卡片 */
+/* 外带独立大卡片 */
 .ta-card{
   width:100%;
   min-height:96px;
@@ -956,6 +956,196 @@ svg{ display:block; }
   *{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
 }
 
+/* ==========================================================================
+   操作员身份 / 结账计算器 / 三级分类（后加模块）
+   ========================================================================== */
+
+/* ---------- 顶部操作员身份 ---------- */
+.op-chip{
+  min-height:34px; padding:0 12px;
+  border-radius:99px;
+  background:rgba(255,255,255,.22);
+  border:1px solid rgba(255,255,255,.45);
+  color:#fff; font-size:12.5px; font-weight:800;
+  display:inline-flex; align-items:center; gap:5px;
+  white-space:nowrap;
+}
+.op-chip:active{ background:rgba(255,255,255,.34); }
+.op-chip.staff{ background:rgba(255,255,255,.14); }
+
+/* 员工模式置灰的高危按钮 */
+.is-locked{
+  opacity:.45 !important;
+  filter:grayscale(1);
+  cursor:not-allowed !important;
+  pointer-events:auto;   /* 保留 title 提示，点击由 JS 拦截 */
+}
+.locked-tip{
+  background:var(--danger-soft) !important;
+  border-color:var(--danger-line) !important;
+  color:var(--danger);
+  font-size:13px; font-weight:700; line-height:1.6;
+}
+
+/* ---------- 结账页：收款 / 计算器 ---------- */
+.co-pay{ padding-bottom:14px; }
+.co-rows{ margin:2px 0 10px; }
+.co-row{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:7px 0;
+  border-bottom:1px dashed var(--border);
+}
+.co-row:last-child{ border-bottom:none; }
+.co-row .k{ font-size:13px; font-weight:700; color:var(--muted); }
+.co-row .v{ font-size:20px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; }
+.co-row .v.big{ font-size:26px; }
+.co-row.change .v{ color:var(--muted); }
+.co-row.change.over{ background:var(--primary-soft); margin:0 -10px; padding:8px 10px; border-radius:12px; border-bottom:none; }
+.co-row.change.over .k,
+.co-row.change.over .v{ color:var(--primary-hi); }
+.co-err{
+  margin:2px 0 10px;
+  background:var(--danger-soft);
+  border:1px solid var(--danger-line);
+  color:var(--danger);
+  font-size:13px; font-weight:800;
+  padding:9px 12px; border-radius:12px;
+}
+.co-quick{ display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+.co-quick::-webkit-scrollbar{ display:none; }
+.co-quick .chip{ flex:0 0 auto; min-height:38px; }
+
+.co-keypad{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+.co-key{
+  min-height:72px;               /* 触屏友好：≥72px */
+  border-radius:16px;
+  border:1.5px solid var(--border);
+  background:var(--surface-solid);
+  color:var(--text);
+  font-size:26px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.co-key:active{ background:var(--primary-soft); border-color:var(--primary); color:var(--primary-hi); transform:scale(.97); }
+.co-key.fn{ font-size:20px; color:var(--muted); background:rgba(0,0,0,.03); }
+.co-key.fn:active{ color:var(--danger); border-color:var(--danger-line); background:var(--danger-soft); }
+
+/* ---------- 分类管理树 ---------- */
+.cat-tree{ padding:6px 8px; }
+.cat-row{
+  display:flex; align-items:center; gap:8px;
+  padding:8px 6px;
+  border-radius:12px;
+  background:transparent;
+}
+.cat-row + .cat-row{ margin-top:2px; }
+.cat-row:hover{ background:var(--primary-soft); }
+.cat-row.lv0{ padding-left:6px;  background:rgba(255,122,0,.05); }
+.cat-row.lv1{ padding-left:22px; }
+.cat-row.lv2{ padding-left:38px; }
+.cat-row.off{ opacity:.5; }
+.cat-row.dragging{ opacity:.4; background:var(--primary-soft-2); }
+.cr-grip{ color:var(--faint); font-size:13px; letter-spacing:-2px; cursor:grab; flex:0 0 auto; }
+.cr-dot{ width:7px; height:7px; border-radius:99px; flex:0 0 auto; }
+.cr-dot.lv0{ background:var(--primary); width:9px; height:9px; }
+.cr-dot.lv1{ background:var(--warn); }
+.cr-dot.lv2{ background:var(--faint); }
+.cr-nm{ font-size:14px; font-weight:800; color:var(--text); flex:0 0 auto; max-width:44%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cat-row.lv2 .cr-nm{ font-weight:700; }
+.cr-cnt{ font-size:11.5px; color:var(--faint); flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cr-acts{ display:flex; gap:4px; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; }
+.cr-locked{ font-size:11.5px; color:var(--faint); }
+.btn-mini{
+  min-height:30px; padding:0 9px;
+  border-radius:9px;
+  border:1.5px solid var(--border);
+  background:var(--surface-solid);
+  color:var(--muted);
+  font-size:12px; font-weight:700;
+}
+.btn-mini:active{ background:var(--primary-soft); border-color:var(--primary); color:var(--primary-hi); }
+.btn-mini.danger{ color:var(--danger); border-color:var(--danger-line); }
+.btn-mini.danger:active{ background:var(--danger-soft); }
+
+/* 菜品列表行（可拖拽） */
+.dish-row{ transition:opacity .15s; }
+.dish-row.off{ opacity:.55; }
+.dish-row.dragging{ opacity:.4; }
+.cat-pick{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+@media (max-width:520px){
+  .cat-pick{ grid-template-columns:1fr; }
+  .co-key{ min-height:64px; font-size:24px; }
+}
+
+/* ---------- 点餐页：三层横向滚动标签 ---------- */
+.cat-bar{ flex-direction:column; align-items:stretch; overflow:visible; padding-top:6px; }
+.cat-bar .tab-row{
+  display:flex; gap:6px;
+  overflow-x:auto; overflow-y:hidden;
+  scrollbar-width:none;
+  padding:3px 0;
+}
+.cat-bar .tab-row::-webkit-scrollbar{ display:none; }
+.cat-bar .tab-row.lv1 .cat-chip{
+  font-size:14px; font-weight:800; min-height:38px;
+  border-color:var(--primary-soft-2);
+}
+.cat-bar .tab-row.lv1 .cat-chip.active{ box-shadow:0 4px 10px rgba(255,106,0,.3); }
+.cat-bar .tab-row.lv2 .cat-chip{ min-height:34px; font-size:13px; }
+.cat-bar .tab-row.lv2 .cat-chip.active{
+  background:var(--primary-soft); color:var(--primary-hi); border-color:var(--primary); box-shadow:none;
+}
+.cat-bar .tab-row.lv3 .cat-chip{
+  min-height:30px; padding:0 11px; font-size:12.5px; font-weight:600;
+  background:rgba(0,0,0,.02);
+}
+.cat-bar .tab-row.lv3 .cat-chip.active{
+  background:var(--text); color:#fff; border-color:transparent; box-shadow:none;
+}
+
+/* ---------- 操作员切换弹窗 ---------- */
+.op-pick{ display:flex; flex-direction:column; gap:8px; }
+.op-opt{
+  display:flex; align-items:center; gap:9px;
+  padding:11px 12px;
+  border-radius:14px;
+  border:1.5px solid var(--border);
+  background:var(--surface-solid);
+  cursor:pointer;
+  transition:border-color .15s, background .15s;
+}
+.op-opt input{
+  appearance:none; -webkit-appearance:none;
+  width:0; height:0; margin:0; border:none; opacity:0; position:absolute;
+}
+.op-opt .dot{
+  width:18px; height:18px; border-radius:99px; flex:0 0 auto;
+  border:2px solid var(--border);
+  box-shadow:inset 0 0 0 3px #fff;
+}
+.op-opt .txt{ font-size:15px; font-weight:800; color:var(--text); flex:0 0 auto; }
+.op-opt .desc{ font-size:11.5px; color:var(--faint); flex:1 1 auto; text-align:right; }
+.op-opt.on{
+  border-color:var(--primary);
+  background:var(--primary-soft);
+}
+.op-opt.on .dot{ border-color:var(--primary); background:var(--primary); }
+.op-opt.on .txt{ color:var(--primary-hi); }
+.op-opt.on .desc{ color:var(--primary-hi); opacity:.85; }
+
+/* 桌卡片「其他会话占用」角标 */
+.tc-lock{
+  position:absolute; top:5px; right:6px;
+  font-size:12px; line-height:1;
+  opacity:.9;
+}
+
 </style>
 </head>
 <body>
@@ -975,6 +1165,7 @@ svg{ display:block; }
         <div class="clock-sub"><span id="clock-date">--</span><span class="dot">·</span><span id="clock-greet">--</span></div>
       </div>
       <div class="topbar-right">
+        <button class="op-chip" id="btn-operator" type="button" title="点击切换操作员">操作员：老板</button>
         <span class="pill-status" id="net-status" title="离线可用">离线可用</span>
       </div>
     </div>
@@ -1021,6 +1212,7 @@ svg{ display:block; }
     <div class="boot-text">YH POS SYS 正在启动…</div>
   </div>
 </div>
+
 
 
 
@@ -1281,16 +1473,20 @@ svg{ display:block; }
 /* ============ 10-db.js ============ */
 /* 10-db.js · IndexedDB 封装
    仓库：menu / orders / ledger / addons / photos / pdfArchives / kv
-         carts（台桌 & 外卖进行中购物车）/ counters（单号计数器）
-         locks（工位软锁，跨会话互斥） */
+         carts（台桌 & 外带进行中购物车）/ counters（单号计数器）
+         locks（工位软锁，跨会话互斥）
+         categories（一级）/ subCategories（二级）/ thirdCategories（三级） */
 (function (G) {
   'use strict';
 
   var DB_NAME = 'pos-cashier-db';
-  var DB_VERSION = 3;
+  var DB_VERSION = 4;
 
   var STORES = {
     menu:        { keyPath: 'id', auto: true, indexes: [['category','category','unique:false']] },
+    categories:       { keyPath: 'categoryId' },
+    subCategories:    { keyPath: 'subId', indexes: [['parentCategoryId','parentCategoryId','unique:false']] },
+    thirdCategories:  { keyPath: 'thirdId', indexes: [['parentSubId','parentSubId','unique:false']] },
     orders:      { keyPath: 'id', auto: true, indexes: [['date','date','unique:false'], ['createTime','createTime','unique:false']] },
     ledger:      { keyPath: 'id', auto: true, indexes: [['date','date','unique:false'], ['type','type','unique:false']] },
     addons:      { keyPath: 'id', auto: true, indexes: [['kind','kind','unique:false']] },
@@ -1485,6 +1681,176 @@ svg{ display:block; }
   }
   function delAddon(id) { return DB.del('addons', id); }
 
+  /* ================= 一 / 二 / 三级分类 =================
+     层级强绑定：二级依附一级，三级依附二级，菜品必须归属到三级分类。
+     历史订单只存菜品本身快照，不存分类 ID —— 改名 / 移动分组不影响旧小票与 PDF。 */
+  var DEFAULT_CAT = { name: '未分类' }, DEFAULT_SUB = { name: '默认子分类' }, DEFAULT_THIRD = { name: '默认分组' };
+
+  function bySort(a, b) {
+    return (a.sort || 0) - (b.sort || 0) || String(a.name || '').localeCompare(String(b.name || ''), 'zh');
+  }
+  function listCategories() { return DB.getAll('categories').then(function (a) { a.sort(bySort); return a; }); }
+  function listSubCategories() { return DB.getAll('subCategories').then(function (a) { a.sort(bySort); return a; }); }
+  function listThirdCategories() { return DB.getAll('thirdCategories').then(function (a) { a.sort(bySort); return a; }); }
+
+  /* 新建时若未给 sort，按同级当前最大 sort + 10 追加到末尾 */
+  function tailSort(store, filterFn) {
+    return DB.getAll(store).then(function (arr) {
+      var list = (arr || []).filter(filterFn || function () { return true; });
+      var max = list.reduce(function (m, x) { return Math.max(m, +x.sort || 0); }, 0);
+      return max + 10;
+    });
+  }
+  function saveCategory(it) {
+    it.isActive = it.isActive !== false;
+    if (it.categoryId && it.sort != null) return DB.put('categories', it);
+    if (!it.categoryId) it.categoryId = U.uid();
+    return tailSort('categories').then(function (s) {
+      it.sort = s;
+      return DB.put('categories', it);
+    });
+  }
+  function saveSubCategory(it) {
+    it.isActive = it.isActive !== false;
+    if (it.subId && it.sort != null) return DB.put('subCategories', it);
+    if (!it.subId) it.subId = U.uid();
+    return tailSort('subCategories', function (x) { return x.parentCategoryId === it.parentCategoryId; })
+      .then(function (s) { it.sort = s; return DB.put('subCategories', it); });
+  }
+  function saveThirdCategory(it) {
+    it.isActive = it.isActive !== false;
+    if (it.thirdId && it.sort != null) return DB.put('thirdCategories', it);
+    if (!it.thirdId) it.thirdId = U.uid();
+    return tailSort('thirdCategories', function (x) { return x.parentSubId === it.parentSubId; })
+      .then(function (s) { it.sort = s; return DB.put('thirdCategories', it); });
+  }
+
+  /* 删除保护：有子节点 / 挂载菜品一律拒绝，并返回原因 */
+  function checkDelete(kind, id) {
+    if (kind === 'cat') {
+      return Promise.all([DB.getAll('subCategories'), DB.getAll('menu')]).then(function (r) {
+        var subs = (r[0] || []).filter(function (s) { return s.parentCategoryId === id; });
+        if (subs.length) return { ok: false, why: '该一级分类下还有 ' + subs.length + ' 个二级分类' };
+        var dishes = (r[1] || []).filter(function (m) { return m.categoryId === id; });
+        if (dishes.length) return { ok: false, why: '该一级分类下还挂着 ' + dishes.length + ' 个菜品' };
+        return { ok: true };
+      });
+    }
+    if (kind === 'sub') {
+      return Promise.all([DB.getAll('thirdCategories'), DB.getAll('menu')]).then(function (r) {
+        var ths = (r[0] || []).filter(function (t) { return t.parentSubId === id; });
+        if (ths.length) return { ok: false, why: '该二级分类下还有 ' + ths.length + ' 个三级分类' };
+        var dishes = (r[1] || []).filter(function (m) { return m.subCategoryId === id; });
+        if (dishes.length) return { ok: false, why: '该二级分类下还挂着 ' + dishes.length + ' 个菜品' };
+        return { ok: true };
+      });
+    }
+    return DB.getAll('menu').then(function (arr) {
+      var dishes = (arr || []).filter(function (m) { return m.thirdCategoryId === id; });
+      if (dishes.length) return { ok: false, why: '该三级分类下还挂着 ' + dishes.length + ' 个菜品' };
+      return { ok: true };
+    });
+  }
+  function delCategory(id) { return DB.del('categories', id); }
+  function delSubCategory(id) { return DB.del('subCategories', id); }
+  function delThirdCategory(id) { return DB.del('thirdCategories', id); }
+
+  /* 三级分类全路径，给菜品列表 / 点餐页展示用 */
+  function pathOf(ids) {
+    return Promise.all([listCategories(), listSubCategories(), listThirdCategories()])
+      .then(function (r) {
+        var c = (r[0] || []).find(function (x) { return x.categoryId === ids.categoryId; });
+        var s = (r[1] || []).find(function (x) { return x.subId === ids.subCategoryId; });
+        var t = (r[2] || []).find(function (x) { return x.thirdId === ids.thirdCategoryId; });
+        return { cat: c, sub: s, third: t, text: [c && c.name, s && s.name, t && t.name].filter(Boolean).join(' / ') };
+      });
+  }
+
+  /* 首次使用 / 老库升级：建默认三级分类，并把无归属的历史菜品挂进去 */
+  function ensureDefaultCategories() {
+    return listCategories().then(function (cats) {
+      if (cats.length) return ensureDefaultSubs(cats[0]);
+      return saveCategory(Object.assign({ categoryId: U.uid(), sort: 10 }, DEFAULT_CAT))
+        .then(function () { return listCategories(); })
+        .then(function (c2) { return ensureDefaultSubs(c2[0]); });
+    }).then(function (third) {
+      // 历史菜品兜底归属
+      return DB.getAll('menu').then(function (arr) {
+        var jobs = [];
+        (arr || []).forEach(function (m) {
+          if (m.thirdCategoryId) return;
+          m.categoryId = third.catId;
+          m.subCategoryId = third.subId;
+          m.thirdCategoryId = third.thirdId;
+          jobs.push(DB.put('menu', m));
+        });
+        return Promise.all(jobs);
+      });
+    });
+  }
+  function ensureDefaultSubs(cat) {
+    return listSubCategories().then(function (subs) {
+      var own = subs.filter(function (s) { return s.parentCategoryId === cat.categoryId; });
+      if (own.length) return ensureDefaultThirds(own[0], cat);
+      return saveSubCategory({ subId: U.uid(), parentCategoryId: cat.categoryId, name: DEFAULT_SUB.name, sort: 10, isActive: true })
+        .then(function () { return listSubCategories(); })
+        .then(function (s2) { return ensureDefaultThirds(s2.filter(function (s) { return s.parentCategoryId === cat.categoryId; })[0], cat); });
+    });
+  }
+  function ensureDefaultThirds(sub, cat) {
+    return listThirdCategories().then(function (ths) {
+      var own = ths.filter(function (t) { return t.parentSubId === sub.subId; });
+      if (own.length) return { catId: cat.categoryId, subId: sub.subId, thirdId: own[0].thirdId };
+      var thirdId = U.uid();
+      return saveThirdCategory({ thirdId: thirdId, parentSubId: sub.subId, name: DEFAULT_THIRD.name, sort: 10, isActive: true })
+        .then(function () { return { catId: cat.categoryId, subId: sub.subId, thirdId: thirdId }; });
+    });
+  }
+
+  /* 菜品重排序号：按 三级分类扁平序号*1000 + 组内序号，
+     让点餐页与后台列表的显示顺序与分类树一致 */
+  function reindexDishes() {
+    return Promise.all([listCategories(), listSubCategories(), listThirdCategories(), DB.getAll('menu')])
+      .then(function (r) {
+        var cats = r[0], subs = r[1], ths = r[2], menu = r[3] || [];
+        var gi = 0, jobs = [];
+        cats.forEach(function (c) {
+          subs.filter(function (s) { return s.parentCategoryId === c.categoryId; }).forEach(function (s) {
+            ths.filter(function (t) { return t.parentSubId === s.subId; }).forEach(function (t) {
+              var dishes = menu.filter(function (m) { return m.thirdCategoryId === t.thirdId; });
+              dishes.sort(bySort);
+              dishes.forEach(function (m, i) {
+                var v = gi * 1000 + i;
+                if (m.sort !== v) { m.sort = v; jobs.push(DB.put('menu', m)); }
+              });
+              gi++;
+            });
+          });
+        });
+        // 没挂到任何三级分类的孤儿菜品，排到最后
+        menu.filter(function (m) { return !m.thirdCategoryId; }).forEach(function (m, i) {
+          var v = gi * 1000 + i;
+          if (m.sort !== v) { m.sort = v; jobs.push(DB.put('menu', m)); }
+        });
+        return Promise.all(jobs);
+      });
+  }
+
+  /* 批量把菜品重新分配到指定三级分类 */
+  function assignDishes(menuIds, ids) {
+    return DB.getAll('menu').then(function (arr) {
+      var jobs = [];
+      (arr || []).forEach(function (m) {
+        if (menuIds.indexOf(m.id) < 0) return;
+        m.categoryId = ids.categoryId;
+        m.subCategoryId = ids.subCategoryId;
+        m.thirdCategoryId = ids.thirdCategoryId;
+        jobs.push(DB.put('menu', m));
+      });
+      return Promise.all(jobs).then(reindexDishes);
+    });
+  }
+
   /* ---- 订单 ---- */
   function listOrders(opts) {
     opts = opts || {};
@@ -1525,10 +1891,10 @@ svg{ display:block; }
   }
   function delLedger(id) { return DB.del('ledger', id); }
 
-  /* ================= 台桌 / 外卖 进行中购物车 =================
+  /* ================= 台桌 / 外带 进行中购物车 =================
      slotId 规则：
        堂食  → 'T' + 桌号补零（T01 .. T50，随 tableCount 扩展）
-       外卖  → 'TAKEAWAY'
+       外带  → 'TAKEAWAY'
      每个 slot 同时只允许一组购物车。 */
   var TAKEAWAY_SLOT = 'TAKEAWAY';
   function tableSlotId(t) { return 'T' + String(+t).padStart(2, '0'); }
@@ -1646,7 +2012,7 @@ svg{ display:block; }
 
   /* ================= 单号计数器 =================
      堂食 DI：DI 001 → DI 9999，累计不按天重置，满 9999 后回 DI 001
-     外卖 TA：TA001 起，每个自然日重置 */
+     外带 TA：TA001 起，每个自然日重置 */
   function fmtDI(n) { return 'DI ' + String(n).padStart(3, '0'); }
   function fmtTA(n) { return 'TA' + String(n).padStart(3, '0'); }
 
@@ -1715,22 +2081,27 @@ svg{ display:block; }
   function exportJSON() {
     return Promise.all([
       DB.getAll('menu'), DB.getAll('orders'), DB.getAll('ledger'),
-      DB.getAll('addons'), DB.getAll('carts'), getCounters()
+      DB.getAll('addons'), DB.getAll('carts'), getCounters(), getOperator(),
+      DB.getAll('categories'), DB.getAll('subCategories'), DB.getAll('thirdCategories')
     ]).then(function (res) {
       return {
         app: 'pos-cashier',
-        version: 2,
+        version: 3,
         exportedAt: nowISO(),
         menu: res[0], orders: res[1], ledger: res[2], addons: res[3],
         carts: res[4],
-        counters: res[5]
+        counters: res[5],
+        operator: res[6],
+        categories: res[7], subCategories: res[8], thirdCategories: res[9]
       };
     });
   }
   function importJSON(obj) {
     if (!obj || obj.app !== 'pos-cashier') throw new Error('文件格式不符（不是本应用备份）');
     var jobs = [];
-    ['menu','orders','ledger','addons','carts'].forEach(function (k) {
+    var allStores = ['menu','orders','ledger','addons','carts',
+                     'categories','subCategories','thirdCategories'];
+    allStores.forEach(function (k) {
       jobs.push(DB.clear(k));
       (obj[k] || []).forEach(function (row) { jobs.push(DB.put(k, row)); });
     });
@@ -1738,7 +2109,10 @@ svg{ display:block; }
     jobs.push(DB.clear('locks'));
     return Promise.all(jobs).then(function () {
       // 恢复单号计数（兼容旧版备份：无 counters 字段则不改动）
-      return obj.counters ? setCounters(obj.counters) : null;
+      if (obj.counters) setCounters(obj.counters);
+      // 恢复操作员身份配置
+      if (obj.operator) setOperator(obj.operator);
+      return null;
     });
   }
 
@@ -1757,9 +2131,42 @@ svg{ display:block; }
     });
   }
 
+  /* ================= 操作员身份（老板 / 员工） =================
+     简易模式切换，无密码；仅本地持久化（IndexedDB kv），刷新不丢失。
+     权限：员工禁止 全部重置 / 导出备份 / 删除 PDF / 修改菜单。 */
+  var OPERATOR_KEY = 'operator';
+  var staffRole = '老板';
+  /* opReady：身份已从库里读回；opDirty：调用过 set。
+     没有这两个标记时，「模块加载时的异步初始化」会在 set 之后落地把刚切好的身份覆盖回默认值。 */
+  var opReady = false, opDirty = false;
+  function getOperator() {
+    if (opReady) return Promise.resolve(staffRole);
+    return DB.get('kv', OPERATOR_KEY).then(function (r) { if (!opDirty) staffRole = r ? (r.role || '老板') : '老板'; opReady = true; return staffRole; })
+      .catch(function () { opReady = true; return staffRole; });
+  }
+  function setOperator(role) {
+    var v = role === '员工' ? '员工' : '老板';
+    staffRole = v;
+    opDirty = true; opReady = true;
+    return DB.put('kv', { k: OPERATOR_KEY, role: v });
+  }
+  var EMPLOYEE_BLOCKED = { reset: true, export: true, pdfDelete: true, menuEdit: true };
+  function canOperator(action) { return staffRole !== '员工' || !EMPLOYEE_BLOCKED[action]; }
+  /* 启动时异步加载身份到内存，供 UI 同步判断权限（员工置灰高危按钮） */
+  getOperator();
+
   G.App = {
+    operator: { get: getOperator, set: setOperator, current: function () { return staffRole; }, can: canOperator },
     cfg: { load: load, save: save, get: get, set: set, all: function () { if (!cfg) load(); return cfg; } },
-    menu: { list: listMenu, get: getMenu, save: saveMenu, del: delMenu },
+    menu: { list: listMenu, get: getMenu, save: saveMenu, del: delMenu, assign: assignDishes },
+    cats: {
+      list: listCategories, listSubs: listSubCategories, listThirds: listThirdCategories,
+      save: saveCategory, saveSub: saveSubCategory, saveThird: saveThirdCategory,
+      del: delCategory, delSub: delSubCategory, delThird: delThirdCategory,
+      checkDelete: checkDelete, path: pathOf,
+      ensureDefaults: ensureDefaultCategories, reindex: reindexDishes,
+      DEFAULT_CAT: DEFAULT_CAT, DEFAULT_SUB: DEFAULT_SUB, DEFAULT_THIRD: DEFAULT_THIRD
+    },
     addons: { list: listAddons, save: saveAddon, del: delAddon },
     orders: { list: listOrders, get: getOrder, save: saveOrder, del: delOrder, clearAll: clearAllOrders },
     ledger: { list: listLedger, save: saveLedger, del: delLedger },
@@ -1825,16 +2232,24 @@ svg{ display:block; }
   'use strict';
   var U = G.U;
 
-  /* 生成单号（堂食 DI / 外卖 TA） */
+  /* 生成单号（堂食 DI / 外带 TA） */
   function nextOrderNo(kind) {
     return kind === 'takeaway' ? G.App.seq.nextTakeaway() : G.App.seq.nextDineIn();
   }
 
-  /* 购物车 → 历史订单记录（不落单号前不写库） */
-  function buildOrder(cart, orderNo) {
-    var total = 0;
-    (cart.items || []).forEach(function (l) { total += +l.subtotal || 0; });
-    total = Math.round(total * 100) / 100;
+  /* 四舍五入到分：浮点相加会出现 12.300000000000001 这种值，落库前必须抹平 */
+  function money(n) { return Math.round((+n || 0) * 100) / 100; }
+
+  /* 购物车 → 历史订单记录（不落单号前不写库）
+     应付 due 永远由菜品算出，实收 paid 只能用键盘输入，
+     找零 change = paid - due，只做展示与存档，不允许反过来改总价。 */
+  function buildOrder(cart, orderNo, payInfo) {
+    var due = 0;
+    (cart.items || []).forEach(function (l) { due += +l.subtotal || 0; });
+    due = money(due);
+    payInfo = payInfo || {};
+    var paid = payInfo.paid == null || payInfo.paid === '' ? due : money(payInfo.paid);
+    var change = payInfo.change == null ? money(paid - due) : money(payInfo.change);
     var now = new Date();
     return {
       orderNo: orderNo,
@@ -1852,9 +2267,38 @@ svg{ display:block; }
           photoId: l.photoId || '', subtotal: l.subtotal
         };
       }),
-      total: total,
-      paid: true
+      // 历史订单只存菜品快照，不存一/二/三级分类，改名或移动分组不影响旧单据
+      total: due,
+      due: due,
+      paid: paid,
+      change: change,
+      operator: (G.App.operator && G.App.operator.current) ? G.App.operator.current() : '老板',
+      settled: true
     };
+  }
+
+  /* 收银键盘的纯输入规则：只吃数字与一个小数点，小数最多两位，总长封顶 9 位。
+     抽成纯函数是为了能被冒烟测试直接调用（'00' 这类连按键也走同一套规则）。
+     返回处理后的新字符串，不改动入参。 */
+  function keypad(str, key) {
+    str = String(str == null ? '' : str);
+    if (key === 'back') return str.slice(0, -1);
+    if (key === 'clear') return '';
+    var chars = String(key).split('');
+    for (var i = 0; i < chars.length; i++) {
+      var k = chars[i];
+      if (k === '.') {
+        if (str.indexOf('.') >= 0) continue;
+        str = str === '' ? '0.' : str + '.';
+        continue;
+      }
+      if (k < '0' || k > '9') continue;
+      var dotAt = str.indexOf('.');
+      if (dotAt >= 0 && str.length - dotAt - 1 >= 2) continue;   // 分位封顶
+      str = (str === '0') ? k : str + k;
+      if (str.length > 9) str = str.slice(0, 9);
+    }
+    return str;
   }
 
   /* 确保购物车已分配单号（已分配则沿用，不重复消耗计数） */
@@ -1866,18 +2310,28 @@ svg{ display:block; }
     });
   }
 
-  /* 结账：取/生成单号 → 写历史 → 清空购物车 →（可选）打印 */
+  /* 结账：校验收款 → 取/生成单号 → 写历史 → 清空购物车 →（可选）打印
+     opts.paid 为客户实际给的钱；缺则默认刚好付清（点餐页「下单收银」直接走的分支）。 */
   function checkout(cart, opts) {
     opts = opts || {};
     if (!cart || !cart.items || cart.items.length === 0) {
       return Promise.reject(new Error('购物车为空，无法结账'));
     }
+    var due = 0;
+    (cart.items || []).forEach(function (l) { due += +l.subtotal || 0; });
+    due = money(due);
+    var paid = (opts.paid == null || opts.paid === '') ? due : money(opts.paid);
+    if (paid < due - 0.0001) {
+      return Promise.reject(new Error('收款不足，金额不能小于应付 RM ' + U.formatMoneyPlain(due)));
+    }
+    var change = money(paid - due);
     return ensureOrderNo(cart).then(function (no) {
-      var order = buildOrder(cart, no);
+      var order = buildOrder(cart, no, { paid: paid, change: change });
       return G.App.orders.save(order).then(function () {
         return G.App.carts.clear(cart.slotId).then(function () { return order; });
       });
     }).then(function (order) {
+      // 结账页自己控制打印时机；autoPrint 打开时才在这里自动出票
       if (opts.print !== false && G.App.cfg.get('autoPrint')) {
         return G.Print.print(order).then(function () { return order; },
                              function () { return order; });
@@ -1924,13 +2378,14 @@ svg{ display:block; }
     return G.Print.print(order);
   }
 
-  /* 显示用：桌号 / 外卖 标签 */
+  /* 显示用：桌号 / 外带 标签 */
   function slotLabel(order) {
-    if (order.kind === 'takeaway') return '外卖';
+    if (order.kind === 'takeaway') return '外带';
     return '桌 ' + (order.table || '-') + ' 号';
   }
 
   G.Flow = {
+    keypad: keypad,
     nextOrderNo: nextOrderNo,
     ensureOrderNo: ensureOrderNo,
     buildOrder: buildOrder,
@@ -1939,6 +2394,357 @@ svg{ display:block; }
     reprint: reprint,
     slotLabel: slotLabel,
     holdLock: holdLock
+  };
+})(window);
+
+
+/* ============ 26-cats.js ============ */
+/* 26-cats.js · 一 / 二 / 三级分类树：加载、渲染、排序、增删改、删除保护
+   菜单管理页的分类管理模块与点餐页的三层标签栏共用这里，
+   保证「后台怎么排，前台就怎么显示」。 */
+(function (G) {
+  'use strict';
+  var U = G.U;
+
+  /* 一次性拉出完整三层树 + 每个三级分类下的菜品数 */
+  function loadTree() {
+    return Promise.all([
+      G.App.cats.list(), G.App.cats.listSubs(), G.App.cats.listThirds(), G.App.menu.list()
+    ]).then(function (r) {
+      var cats = r[0], subs = r[1], ths = r[2], menu = r[3] || [];
+      return cats.map(function (c) {
+        return {
+          cat: c,
+          subs: subs.filter(function (s) { return s.parentCategoryId === c.categoryId; })
+            .map(function (s) {
+              return {
+                sub: s,
+                thirds: ths.filter(function (t) { return t.parentSubId === s.subId; })
+                  .map(function (t) {
+                    return {
+                      third: t,
+                      dishes: menu.filter(function (m) { return m.thirdCategoryId === t.thirdId; })
+                    };
+                  })
+              };
+            })
+        };
+      });
+    });
+  }
+
+  /* 点餐页的三层标签只展示「启用 + 下面还有上架菜品」的分支：
+     停用的分类、以及整组菜品都下架的分类，整条隐藏，不留空标签。
+     抽在这里而不是点餐页内部，是为了让冒烟测试能直接验证这套规则。 */
+  function onSale(m) { return m.available !== false; }
+  function prune(tree) {
+    var out = [];
+    (tree || []).forEach(function (c) {
+      if (c.cat.isActive === false) return;
+      var subs = [];
+      c.subs.forEach(function (s) {
+        if (s.sub.isActive === false) return;
+        var thirds = s.thirds.filter(function (t) {
+          return t.third.isActive !== false && t.dishes.some(onSale);
+        });
+        if (thirds.length) subs.push({ sub: s.sub, thirds: thirds });
+      });
+      if (subs.length) out.push({ cat: c.cat, subs: subs });
+    });
+    return out;
+  }
+
+  /* 拖拽排序落库：按传入顺序重写 sort（10、20、30…） */
+  function persistOrder(list, saveFn) {
+    var jobs = list.map(function (it, i) {
+      it.sort = (i + 1) * 10;
+      return saveFn(it);
+    });
+    return Promise.all(jobs);
+  }
+
+  var SAVE_FN = {
+    cat: function (it) { return G.App.cats.save(it); },
+    sub: function (it) { return G.App.cats.saveSub(it); },
+    third: function (it) { return G.App.cats.saveThird(it); }
+  };
+
+  /* 同级上移 / 下移（手机触摸端 HTML5 拖拽不好使，按钮是主力） */
+  function move(kind, tree, id, dir) {
+    var list = null, saveFn = SAVE_FN[kind];
+    if (kind === 'cat') {
+      list = tree.map(function (x) { return x.cat; });
+    } else {
+      tree.forEach(function (c) {
+        if (kind === 'sub') {
+          c.subs.forEach(function () {});
+          var own = c.subs.map(function (s) { return s.sub; });
+          if (own.some(function (s) { return s.subId === id; })) list = own;
+        } else {
+          c.subs.forEach(function (s) {
+            var own = s.thirds.map(function (t) { return t.third; });
+            if (own.some(function (t) { return t.thirdId === id; })) list = own;
+          });
+        }
+      });
+    }
+    if (!list || list.length < 2) return Promise.resolve(false);
+    var i = list.findIndex(function (x) {
+      return x[kind === 'cat' ? 'categoryId' : (kind === 'sub' ? 'subId' : 'thirdId')] === id;
+    });
+    var j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return Promise.resolve(false);
+    var t = list[i]; list[i] = list[j]; list[j] = t;
+    return persistOrder(list, saveFn).then(function () { return true; });
+  }
+
+  /* 按 kind 取删除前检查函数与删除函数 */
+  function tryDelete(kind, id, name) {
+    return G.App.cats.checkDelete(kind, id).then(function (res) {
+      if (!res.ok) {
+        U.toast('无法删除「' + name + '」：' + res.why + '，请先迁移或删除。', 'err');
+        return false;
+      }
+      return U.confirm({
+        title: '删除分类？',
+        message: '确定删除「' + name + '」？该操作不可撤销。',
+        okText: '删除', danger: true
+      }).then(function (ok) {
+        if (!ok) return false;
+        var del = kind === 'cat' ? G.App.cats.del : (kind === 'sub' ? G.App.cats.delSub : G.App.cats.delThird);
+        return del(id).then(function () { return true; });
+      });
+    });
+  }
+
+  /* 名称编辑弹窗 */
+  function rename(kind, node) {
+    return U.prompt({
+      title: '重命名', label: '分类名称', value: node.name, placeholder: '例如：汤面'
+    }).then(function (v) {
+      if (v == null) return false;
+      v = String(v).trim();
+      if (!v) { U.toast('名称不能为空', 'err'); return false; }
+      node.name = v;
+      return SAVE_FN[kind](node).then(function () { return true; });
+    });
+  }
+
+  /* 新增分类：一级无需父级；二级绑一级；三级绑二级 */
+  function create(kind, parent) {
+    return U.prompt({
+      title: kind === 'cat' ? '新增一级分类' : (kind === 'sub' ? '新增二级分类' : '新增三级分类'),
+      label: '名称', placeholder: kind === 'cat' ? '例如：面类' : (kind === 'sub' ? '例如：汤面' : '例如：细汤面')
+    }).then(function (v) {
+      if (v == null) return false;
+      v = String(v).trim();
+      if (!v) { U.toast('名称不能为空', 'err'); return false; }
+      if (kind === 'cat') return G.App.cats.save({ name: v, isActive: true }).then(function () { return true; });
+      if (kind === 'sub') return G.App.cats.saveSub({ name: v, parentCategoryId: parent, isActive: true }).then(function () { return true; });
+      return G.App.cats.saveThird({ name: v, parentSubId: parent, isActive: true }).then(function () { return true; });
+    });
+  }
+
+  function toggle(node, kind) {
+    node.isActive = !node.isActive;
+    return SAVE_FN[kind](node);
+  }
+
+  /* ------------------------------------------------------------
+   * 渲染分类树（可编辑版，用于菜单管理页）
+   * opts: { editable, onChanged, container }
+   * ---------------------------------------------------------- */
+  function renderTree(container, tree, opts) {
+    opts = opts || {};
+    container.innerHTML = '';
+    if (!tree.length) {
+      container.appendChild(U.el('div', { class: 'empty' }, [
+        U.el('div', { class: 'em' }, '🗂️'),
+        U.el('p', null, '还没有分类，先新增一个一级分类')
+      ]));
+      return;
+    }
+    tree.forEach(function (c, ci) {
+      container.appendChild(row('cat', c.cat, 0, {
+        count: countText(c),
+        canAdd: true, addLabel: '+二级',
+        up: ci > 0, down: ci < tree.length - 1,
+        tree: tree, opts: opts
+      }));
+      c.subs.forEach(function (s, si) {
+        container.appendChild(row('sub', s.sub, 1, {
+          count: s.thirds.length + ' 三级',
+          parent: c.cat.categoryId,
+          canAdd: true, addLabel: '+三级',
+          up: si > 0, down: si < c.subs.length - 1,
+          tree: tree, opts: opts
+        }));
+        s.thirds.forEach(function (t, ti) {
+          container.appendChild(row('third', t.third, 2, {
+            count: t.dishes.length + ' 道菜',
+            parent: s.sub.subId,
+            canAdd: false,
+            up: ti > 0, down: ti < s.thirds.length - 1,
+            tree: tree, opts: opts
+          }));
+        });
+      });
+    });
+
+    function countText(c) {
+      var nThird = 0, nDish = 0;
+      c.subs.forEach(function (s) {
+        nThird += s.thirds.length;
+        s.thirds.forEach(function (t) { nDish += t.dishes.length; });
+      });
+      return c.subs.length + ' 二级 · ' + nThird + ' 三级 · ' + nDish + ' 菜';
+    }
+
+    function row(kind, node, level, cfg) {
+      var idOf = { cat: 'categoryId', sub: 'subId', third: 'thirdId' }[kind];
+      var id = node[idOf];
+      var r = U.el('div', { class: 'cat-row lv' + level + (node.isActive ? '' : ' off'), 'data-kind': kind, 'data-id': id });
+      r.innerHTML =
+        '<span class="cr-grip" title="拖动排序">⋮⋮</span>' +
+        '<span class="cr-dot lv' + level + '"></span>' +
+        '<span class="cr-nm">' + U.escapeHTML(node.name) + '</span>' +
+        (node.isActive ? '' : '<span class="tag">已停用</span>') +
+        '<span class="cr-cnt">' + U.escapeHTML(cfg.count || '') + '</span>';
+      var acts = U.el('div', { class: 'cr-acts' });
+      if (opts.editable) {
+        if (cfg.up) acts.appendChild(mini('↑', 'up', '上移'));
+        if (cfg.down) acts.appendChild(mini('↓', 'down', '下移'));
+        acts.appendChild(mini('改名', 'edit', '重命名'));
+        acts.appendChild(mini(node.isActive ? '停用' : '启用', 'toggle', '点餐页显示 / 隐藏'));
+        if (cfg.canAdd) acts.appendChild(mini(cfg.addLabel, 'add', '新增下级分类'));
+        acts.appendChild(mini('删除', 'del', '删除', true));
+      } else {
+        acts.appendChild(U.el('span', { class: 'cr-locked' }, '🔒 员工只读'));
+      }
+      r.appendChild(acts);
+      if (opts.editable) r.setAttribute('draggable', 'true');
+      return r;
+
+      function mini(label, act, title, danger) {
+        var b = U.el('button', { class: 'btn-mini' + (danger ? ' danger' : ''), 'data-act': act, title: title }, label);
+        return b;
+      }
+    }
+
+    if (!opts.editable) return;
+
+    /* 事件委托：整棵树只挂一份监听 */
+    container.onclick = function (e) {
+      var b = e.target.closest('[data-act]');
+      if (!b) return;
+      var rowEl = e.target.closest('.cat-row');
+      if (!rowEl) return;
+      var kind = rowEl.getAttribute('data-kind');
+      var id = rowEl.getAttribute('data-id');
+      var node = findNode(tree, kind, id);
+      if (!node) return;
+      var act = b.getAttribute('data-act');
+
+      if (act === 'up' || act === 'down') {
+        move(kind, tree, id, act === 'up' ? -1 : 1).then(function (ok) { if (ok) opts.onChanged && opts.onChanged(); });
+      } else if (act === 'edit') {
+        rename(kind, node).then(function (ok) { if (ok) opts.onChanged && opts.onChanged(); });
+      } else if (act === 'toggle') {
+        toggle(node, kind).then(function () { opts.onChanged && opts.onChanged(); });
+      } else if (act === 'add') {
+        var childKind = kind === 'cat' ? 'sub' : 'third';
+        create(childKind, id).then(function (ok) { if (ok) opts.onChanged && opts.onChanged(); });
+      } else if (act === 'del') {
+        tryDelete(kind, id, node.name).then(function (ok) { if (ok) opts.onChanged && opts.onChanged(); });
+      }
+    };
+
+    /* HTML5 拖拽排序（桌面端）；同层级之间才允许换位置 */
+    var dragRow = null;
+    container.ondragstart = function (e) {
+      var rowEl = e.target.closest('.cat-row');
+      if (!rowEl) return;
+      dragRow = rowEl;
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', rowEl.getAttribute('data-id')); } catch (err) {}
+      rowEl.classList.add('dragging');
+    };
+    container.ondragover = function (e) {
+      if (!dragRow) return;
+      var over = e.target.closest('.cat-row');
+      if (!over || over === dragRow) return;
+      if (over.getAttribute('data-kind') !== dragRow.getAttribute('data-kind')) return;  // 跨层不允许
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      var box = over.getBoundingClientRect();
+      var after = (e.clientY - box.top) > box.height / 2;
+      container.insertBefore(dragRow, after ? over.nextSibling : over);
+    };
+    container.ondragend = function () {
+      if (!dragRow) return;
+      dragRow.classList.remove('dragging');
+      var kind = dragRow.getAttribute('data-kind');
+      var ids = U.qsa('.cat-row[data-kind="' + kind + '"]', container)
+        .map(function (x) { return x.getAttribute('data-id'); });
+      dragRow = null;
+      commitDrag(kind, ids, tree).then(function (ok) { if (ok) opts.onChanged && opts.onChanged(); });
+    };
+  }
+
+  /* 拖拽结束后：只把「同一父级下的同一层」按 DOM 新顺序写回 sort */
+  function commitDrag(kind, ids, tree) {
+    if (kind === 'cat') {
+      var list = ids.map(function (id) {
+        return tree.filter(function (x) { return x.cat.categoryId === id; })[0];
+      }).filter(Boolean).map(function (x) { return x.cat; });
+      if (list.length !== tree.length) return Promise.resolve(false);
+      return persistOrder(list, SAVE_FN.cat).then(function () { return true; });
+    }
+    var jobs = [];
+    if (kind === 'sub') {
+      tree.forEach(function (c) {
+        var own = ids.map(function (id) {
+          return c.subs.filter(function (s) { return s.sub.subId === id; })[0];
+        }).filter(Boolean).map(function (x) { return x.sub; });
+        if (own.length === c.subs.length && own.length > 1) jobs.push(persistOrder(own, SAVE_FN.sub));
+      });
+    } else {
+      tree.forEach(function (c) {
+        c.subs.forEach(function (s) {
+          var own = ids.map(function (id) {
+            return s.thirds.filter(function (t) { return t.third.thirdId === id; })[0];
+          }).filter(Boolean).map(function (x) { return x.third; });
+          if (own.length === s.thirds.length && own.length > 1) jobs.push(persistOrder(own, SAVE_FN.third));
+        });
+      });
+    }
+    if (!jobs.length) return Promise.resolve(false);
+    return Promise.all(jobs).then(function () { return true; });
+  }
+
+  function findNode(tree, kind, id) {
+    var out = null;
+    tree.forEach(function (c) {
+      if (kind === 'cat' && c.cat.categoryId === id) out = c.cat;
+      c.subs.forEach(function (s) {
+        if (kind === 'sub' && s.sub.subId === id) out = s.sub;
+        s.thirds.forEach(function (t) {
+          if (kind === 'third' && t.third.thirdId === id) out = t.third;
+        });
+      });
+    });
+    return out;
+  }
+
+  G.Cats = {
+    loadTree: loadTree,
+    prune: prune,
+    onSale: onSale,
+    renderTree: renderTree,
+    create: create,
+    rename: rename,
+    tryDelete: tryDelete,
+    move: move
   };
 })(window);
 
@@ -2094,7 +2900,7 @@ svg{ display:block; }
     var isTA = order.kind === 'takeaway';
     // 桌台 / 人数 / 支付
     lines.push([].concat(ESCPOS.ALIGN_L,
-                         encodeForPrinter(pad('桌号', 6) + (isTA ? '外卖（无固定桌号）' : ('桌 ' + order.table + ' 号'))),
+                         encodeForPrinter(pad('桌号', 6) + (isTA ? '外带（无固定桌号）' : ('桌 ' + order.table + ' 号'))),
                          ESCPOS.LF));
     if (!isTA) {
       lines.push([].concat(ESCPOS.ALIGN_L,
@@ -2123,11 +2929,26 @@ svg{ display:block; }
     });
 
     lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(sep), ESCPOS.LF));
+    // 应付 / 实收 / 找零（应付永远由菜品算出，实收由收银键盘录入）
+    var due = order.due != null ? order.due : order.total;
+    var paid = order.paid != null ? order.paid : due;
+    var chg = order.change != null ? order.change : Math.max(0, paid - due);
+    lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(padDots('应付', 32, 'RM ' + U.formatMoneyPlain(due))), ESCPOS.LF));
+    lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(padDots('实收', 32, 'RM ' + U.formatMoneyPlain(paid))), ESCPOS.LF));
+    lines.push([].concat(ESCPOS.ALIGN_L, ESCPOS.BOLD_ON,
+                         encodeForPrinter(padDots('找零', 32, 'RM ' + U.formatMoneyPlain(chg))),
+                         ESCPOS.BOLD_OFF, ESCPOS.LF));
+    lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(sep), ESCPOS.LF));
     // 合计
     lines.push([].concat(ESCPOS.ALIGN_C, ESCPOS.SIZE_2, ESCPOS.BOLD_ON,
                          encodeForPrinter('合计：RM ' + U.formatMoneyPlain(order.total)),
                          ESCPOS.LF,
                          ESCPOS.SIZE_1, ESCPOS.BOLD_OFF));
+    lines.push([].concat(ESCPOS.LF, ESCPOS.LF));
+    // 操作员
+    if (order.operator) {
+      lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(pad('操作员', 6) + order.operator), ESCPOS.LF));
+    }
     lines.push([].concat(ESCPOS.LF, ESCPOS.LF, ESCPOS.LF));
     // 底部备注
     if (cfg.receiptFooter) {
@@ -2171,7 +2992,7 @@ svg{ display:block; }
           '<div class="sub">' + U.escapeHTML(U.formatDateCN(new Date())) + ' ' + U.escapeHTML(U.formatHM(new Date())) + '</div>' +
           '<div class="sub">单号：' + U.escapeHTML(order.orderNo || '-') + '</div>' +
           '<div class="sep"></div>' +
-          '<div class="row"><span>桌号</span><span>' + (order.kind === 'takeaway' ? '外卖' : ('桌 ' + order.table + ' 号')) + '</span></div>' +
+          '<div class="row"><span>桌号</span><span>' + (order.kind === 'takeaway' ? '外带' : ('桌 ' + order.table + ' 号')) + '</span></div>' +
           (order.kind === 'takeaway' ? '' : '<div class="row"><span>人数</span><span>' + order.pax + ' 人</span></div>') +
           '<div class="row"><span>支付</span><span>' + U.escapeHTML(order.payMethod) + '</span></div>' +
           '<div class="sep"></div>' +
@@ -2190,7 +3011,12 @@ svg{ display:block; }
             }).join('') +
           '</table>' +
           '<div class="sep"></div>' +
+          '<div class="row"><span>应付</span><span>RM ' + U.formatMoneyPlain(order.due != null ? order.due : order.total) + '</span></div>' +
+          '<div class="row"><span>实收</span><span>RM ' + U.formatMoneyPlain(order.paid != null ? order.paid : (order.due != null ? order.due : order.total)) + '</span></div>' +
+          '<div class="row" style="font-weight:800;"><span>找零</span><span>RM ' + U.formatMoneyPlain(order.change != null ? order.change : 0) + '</span></div>' +
+          '<div class="sep"></div>' +
           '<div class="total">合计：RM ' + U.formatMoneyPlain(order.total) + '</div>' +
+          (order.operator ? '<div class="row"><span>操作员</span><span>' + U.escapeHTML(order.operator) + '</span></div>' : '') +
           (cfg.receiptFooter ? '<div class="foot">' + U.escapeHTML(cfg.receiptFooter) + '</div>' : '') +
         '</div>';
       setTimeout(function () {
@@ -2582,7 +3408,7 @@ svg{ display:block; }
     ctx.textBaseline = 'top';
     var timeStr = (order.createTime || '').slice(11, 16);
     var isTA = order.kind === 'takeaway';
-    var headText = (order.orderNo || '-') + '  ·  ' + (isTA ? '外卖' : ('桌 ' + order.table + ' 号  ·  ' + order.pax + ' 人'));
+    var headText = (order.orderNo || '-') + '  ·  ' + (isTA ? '外带' : ('桌 ' + order.table + ' 号  ·  ' + order.pax + ' 人'));
     ctx.fillText(headText, x + 18, y + 14);
     ctx.fillStyle = '#FF7A00';
     ctx.font = '700 26px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -2591,7 +3417,19 @@ svg{ display:block; }
     ctx.fillText(totalText, x + w - tw - 18, y + 14);
     ctx.fillStyle = '#6B7280';
     ctx.font = '500 20px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText(timeStr + '  ·  ' + (order.payMethod || ''), x + 18, y + 50);
+    var metaLine = timeStr + '  ·  ' + (order.payMethod || '');
+    if (order.operator) metaLine += '  ·  操作员 ' + order.operator;
+    ctx.fillText(metaLine, x + 18, y + 50);
+    // 实收 / 找零（应付 = 合计）
+    if (order.paid != null || order.change != null) {
+      var due = order.due != null ? order.due : order.total;
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = '500 17px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText('应付 ' + U.formatMoneyPlain(due) +
+                   '  实收 ' + U.formatMoneyPlain(order.paid != null ? order.paid : due) +
+                   '  找零 ' + U.formatMoneyPlain(order.change != null ? order.change : 0), x + 18, y + 74);
+      ctx.fillStyle = '#1F2937';
+    }
 
     // 左侧菜品列表
     var listX = x + 18, listW = w - 36;
@@ -2947,7 +3785,7 @@ svg{ display:block; }
               '<div class="grow">' +
                 '<div class="t" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
                   '<span class="order-no">' + U.escapeHTML(o.orderNo || '-') + '</span>' +
-                  '<span>' + (o.kind === 'takeaway' ? '外卖' : ('桌 ' + o.table + ' 号  ·  ' + o.pax + ' 人')) + '</span>' +
+                  '<span>' + (o.kind === 'takeaway' ? '外带' : ('桌 ' + o.table + ' 号  ·  ' + o.pax + ' 人')) + '</span>' +
                 '</div>' +
                 '<div class="s">' + (o.createTime || '').slice(11, 16) + '  ·  ' + U.escapeHTML(o.payMethod) + '  ·  ' + o.items.length + ' 项</div>' +
               '</div>' +
@@ -3009,10 +3847,10 @@ svg{ display:block; }
 
 
 /* ============ 61-views-order.js ============ */
-/* 61-views-order.js · 点餐下单页（台桌 / 外卖 双模式）
+/* 61-views-order.js · 点餐下单页（台桌 / 外带 双模式）
    手机竖屏：上 2/3 菜品滚动区 + 下 1/3 固定结算面板
    平板：由 CSS 切换为左右多列布局
-   购物车按 slot 持久化：堂食 T01..T50，外卖 TAKEAWAY */
+   购物车按 slot 持久化：堂食 T01..T50，外带 TAKEAWAY */
 (function (G) {
   'use strict';
   var U = G.U;
@@ -3026,8 +3864,10 @@ svg{ display:block; }
     var state = {
       slotId: slotId,
       cart: null,
-      category: '__ALL__',
-      catList: [{ id: '__ALL__', name: '全部' }],
+      tree: [],              // 分类树（一 / 二 / 三级）
+      selCat: '',
+      selSub: '',
+      selThird: '',
       menuItems: [],
       addons: [],
       search: ''
@@ -3098,7 +3938,7 @@ svg{ display:block; }
       var c = state.cart;
       var t = wrap.querySelector('#mode-text');
       if (!t || !c) return;
-      t.textContent = c.kind === 'takeaway' ? '外卖订单' : ('堂食 · 桌 ' + c.table + ' 号');
+      t.textContent = c.kind === 'takeaway' ? '外带订单' : ('堂食 · 桌 ' + c.table + ' 号');
       var sub = wrap.querySelector('#ord-subtitle');
       var cnt = (c.items || []).length;
       sub.textContent = cnt ? ('本单已点 ' + cnt + ' 项') : '点菜中';
@@ -3112,8 +3952,8 @@ svg{ display:block; }
             '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' +
           '</button></div>' +
           '<div class="modal-body">' +
-            '<div class="field"><label>外卖工位</label>' +
-              '<button class="btn ' + (state.cart && state.cart.kind === 'takeaway' ? '' : 'btn-ghost') + '" data-slot="TAKEAWAY" style="width:100%;">📦 外卖订单（无固定桌号）</button>' +
+            '<div class="field"><label>外带工位</label>' +
+              '<button class="btn ' + (state.cart && state.cart.kind === 'takeaway' ? '' : 'btn-ghost') + '" data-slot="TAKEAWAY" style="width:100%;">📦 外带订单（无固定桌号）</button>' +
             '</div>' +
             '<div class="field"><label>堂食桌号（1 – ' + n + '）</label>' +
               '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">' +
@@ -3152,7 +3992,7 @@ svg{ display:block; }
         : location.hash + (location.hash.indexOf('?') >= 0 ? '&' : '?') + 'slot=' + sid;
       try { history.replaceState(null, '', next); } catch (e) { location.hash = next; }
       loadCart();
-      U.toast('已切换到 ' + (sid === 'TAKEAWAY' ? '外卖' : '桌 ' + +sid.slice(1)), 'ok');
+      U.toast('已切换到 ' + (sid === 'TAKEAWAY' ? '外带' : '桌 ' + +sid.slice(1)), 'ok');
     }
 
     /* ---------------- 结算面板 ---------------- */
@@ -3163,8 +4003,8 @@ svg{ display:block; }
 
       var row = U.el('div', { class: 'ck-head' });
       if (c.kind === 'takeaway') {
-        // 外卖：人数固定 0，只保留支付方式 + 备注位
-        var taNote = U.el('div', { style: 'font-size:12px;color:var(--muted);font-weight:600;padding:4px 2px;' }, '📦 外卖订单 · 不计桌号与人数');
+        // 外带：人数固定 0，只保留支付方式 + 备注位
+        var taNote = U.el('div', { style: 'font-size:12px;color:var(--muted);font-weight:600;padding:4px 2px;' }, '📦 外带订单 · 不计桌号与人数');
         checkout.appendChild(taNote);
       } else {
         row.innerHTML =
@@ -3253,7 +4093,7 @@ svg{ display:block; }
       if (!c || !c.items || c.items.length === 0) { U.toast('购物车为空', 'err'); return; }
       U.confirm({
         title: '确认收款？',
-        message: (c.kind === 'takeaway' ? '外卖' : '桌 ' + c.table + ' 号') + ' 共 ' + c.items.length + ' 项，合计 RM ' + U.formatMoneyPlain(cartTotal()) + '，将生成单号并出小票。',
+        message: (c.kind === 'takeaway' ? '外带' : '桌 ' + c.table + ' 号') + ' 共 ' + c.items.length + ' 项，合计 RM ' + U.formatMoneyPlain(cartTotal()) + '，将生成单号并出小票。',
         okText: '确认收款'
       }).then(function (ok) {
         if (!ok) return;
@@ -3282,7 +4122,7 @@ svg{ display:block; }
               '<div style="font-size:36px;margin-bottom:6px;">✅</div>' +
               '<div style="font-weight:900;font-size:20px;letter-spacing:1px;">' + U.escapeHTML(order.orderNo) + '</div>' +
               '<div style="color:var(--muted);font-size:13px;margin-top:4px;">' +
-                (order.kind === 'takeaway' ? '外卖' : '桌 ' + order.table + ' 号') +
+                (order.kind === 'takeaway' ? '外带' : '桌 ' + order.table + ' 号') +
                 '  ·  合计 RM ' + U.formatMoneyPlain(order.total) + '</div>' +
             '</div>' +
           '</div>' +
@@ -3365,14 +4205,11 @@ svg{ display:block; }
 
     /* ---------------- 菜单 ---------------- */
     function loadMenu() {
-      Promise.all([G.App.menu.list(), G.App.addons.list()]).then(function (res) {
+      Promise.all([G.App.menu.list(), G.App.addons.list(), G.Cats.loadTree()]).then(function (res) {
         state.menuItems = res[0] || [];
         state.addons = res[1] || [];
-        var seen = {}; state.catList = [{ id: '__ALL__', name: '全部' }];
-        state.menuItems.forEach(function (m) {
-          var k = m.category || '默认';
-          if (!seen[k]) { seen[k] = true; state.catList.push({ id: k, name: k }); }
-        });
+        state.tree = G.Cats.prune(res[2] || []);
+        pickBranch();
         renderCatBar();
         renderDishes();
         state.menuItems.forEach(function (m) {
@@ -3383,27 +4220,87 @@ svg{ display:block; }
       });
     }
 
+    /* ---------------- 三层分类标签 ----------------
+       裁剪规则统一走 G.Cats.prune：停用的分支、整组菜品都下架的分支，
+       在点餐页整条隐藏，不留空标签。 */
+    function onSale(m) { return G.Cats.onSale(m); }
+
+    function findCat(id) {
+      return state.tree.filter(function (c) { return c.cat.categoryId === id; })[0] || null;
+    }
+    function findSub(c, id) {
+      return c ? (c.subs.filter(function (s) { return s.sub.subId === id; })[0] || null) : null;
+    }
+    function findThird(s, id) {
+      return s ? (s.thirds.filter(function (t) { return t.third.thirdId === id; })[0] || null) : null;
+    }
+
+    /* 选中项失效时（改分类 / 停用 / 删掉）自动落到同层第一个可选项 */
+    function pickBranch() {
+      var c = findCat(state.selCat);
+      if (!c) { c = state.tree[0] || null; state.selCat = c ? c.cat.categoryId : ''; }
+      if (!c) { state.selSub = ''; state.selThird = ''; return; }
+      var s = findSub(c, state.selSub);
+      if (!s) { s = c.subs[0]; state.selSub = s ? s.sub.subId : ''; }
+      if (!s) { state.selThird = ''; return; }
+      var t = findThird(s, state.selThird);
+      if (!t) { t = s.thirds[0]; state.selThird = t ? t.third.thirdId : ''; }
+    }
+
+    function tabRow(level, items, sel, onPick) {
+      var row = U.el('div', { class: 'tab-row lv' + level });
+      items.forEach(function (it) {
+        var b = U.el('button', { class: 'cat-chip' + (it.id === sel ? ' active' : '') }, it.name);
+        b.addEventListener('click', function () { onPick(it.id); });
+        row.appendChild(b);
+      });
+      return row;
+    }
+
     function renderCatBar() {
       catBar.innerHTML = '';
-      state.catList.forEach(function (c) {
-        var b = U.el('button', { class: 'cat-chip' + (c.id === state.category ? ' active' : '') }, c.name);
-        b.addEventListener('click', function () { state.category = c.id; renderCatBar(); renderDishes(); });
-        catBar.appendChild(b);
-      });
+      if (!state.tree.length) return;      // 没有可用分支：菜品区会给出提示
+      catBar.appendChild(tabRow(1, state.tree.map(function (c) {
+        return { id: c.cat.categoryId, name: c.cat.name };
+      }), state.selCat, function (id) {
+        state.selCat = id; state.selSub = ''; state.selThird = '';
+        pickBranch(); renderCatBar(); renderDishes();
+      }));
+
+      var c = findCat(state.selCat);
+      if (!c) return;
+      catBar.appendChild(tabRow(2, c.subs.map(function (s) {
+        return { id: s.sub.subId, name: s.sub.name };
+      }), state.selSub, function (id) {
+        state.selSub = id; state.selThird = '';
+        pickBranch(); renderCatBar(); renderDishes();
+      }));
+
+      var s = findSub(c, state.selSub);
+      if (!s) return;
+      catBar.appendChild(tabRow(3, s.thirds.map(function (t) {
+        return { id: t.third.thirdId, name: t.third.name };
+      }), state.selThird, function (id) {
+        state.selThird = id;
+        renderCatBar(); renderDishes();
+      }));
     }
 
     function renderDishes() {
       scroll.innerHTML = '';
       var q = (state.search || '').trim().toLowerCase();
       var list = state.menuItems.filter(function (m) {
-        if (m.available === false) return false;
-        if (state.category !== '__ALL__' && (m.category || '默认') !== state.category) return false;
+        if (!onSale(m)) return false;
+        // 搜索时跨分类找菜；没搜索词才按三级分组过滤
+        if (!q && state.selThird && m.thirdCategoryId !== state.selThird) return false;
         if (q && !((m.name || '').toLowerCase().indexOf(q) >= 0)) return false;
         return true;
       });
       if (list.length === 0) {
+        var msg = state.tree.length ? '没有匹配的菜品'
+                : '还没可用的分类与上架菜品，请到菜单管理先建分类、加菜';
         scroll.appendChild(U.el('div', { class: 'empty', style: 'padding:30px 0;' }, [
-          U.el('div', { class: 'em' }, '🍽️'), U.el('p', null, '没有匹配的菜品')
+          U.el('div', { class: 'em' }, '🍽️'), U.el('p', null, msg)
         ]));
         return;
       }
@@ -3641,10 +4538,13 @@ svg{ display:block; }
             '<div>' +
               '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
                 '<span class="order-no">' + U.escapeHTML(o.orderNo || '-') + '</span>' +
-                (isTA ? '<span class="tag warn">📦 外卖</span>' : '<span class="tag">堂食 · 桌 ' + o.table + ' 号</span>') +
+                (isTA ? '<span class="tag warn">📦 外带</span>' : '<span class="tag">堂食 · 桌 ' + o.table + ' 号</span>') +
+                (o.operator ? '<span class="tag' + (o.operator === '员工' ? ' staff' : '') + '">操作员 ' + U.escapeHTML(o.operator) + '</span>' : '') +
               '</div>' +
               '<div style="font-size:12px;color:var(--muted);margin-top:4px;">' + (o.createTime || '').slice(0, 16).replace('T', ' ') +
-                (isTA ? '' : ('  ·  ' + o.pax + ' 人')) + '  ·  ' + U.escapeHTML(o.payMethod) + '</div>' +
+                (isTA ? '' : ('  ·  ' + o.pax + ' 人')) + '  ·  ' + U.escapeHTML(o.payMethod) +
+                (o.paid != null ? '  ·  实收 ' + U.formatMoneyPlain(o.paid) + ' / 找零 ' + U.formatMoneyPlain(o.change != null ? o.change : 0) : '') +
+              '</div>' +
             '</div>' +
             '<div class="amount-in" style="font-size:20px;font-weight:900;">RM ' + U.formatMoneyPlain(o.total) + '</div>';
           card.appendChild(head);
@@ -3981,7 +4881,7 @@ svg{ display:block; }
               '<div class="grow">' +
                 '<div class="t" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
                   '<span class="order-no">' + U.escapeHTML(o.orderNo || '-') + '</span>' +
-                  '<span>' + (o.kind === 'takeaway' ? '外卖' : ('桌 ' + o.table + ' 号  ·  ' + o.pax + ' 人')) + '</span>' +
+                  '<span>' + (o.kind === 'takeaway' ? '外带' : ('桌 ' + o.table + ' 号  ·  ' + o.pax + ' 人')) + '</span>' +
                 '</div>' +
                 '<div class="s">' + (o.createTime || '').slice(11, 16) + '  ·  ' + U.escapeHTML(o.payMethod) + '  ·  ' + o.items.length + ' 项</div>' +
               '</div>' +
@@ -4024,14 +4924,20 @@ svg{ display:block; }
 
 
 /* ============ 65-views-menu.js ============ */
-/* 65-views-menu.js · 菜单 & 配料管理 */
+/* 65-views-menu.js · 菜单管理：菜品 / 一二级三级分类 / 配料库
+   层级：一级分类 → 二级分类 → 三级分类 → 菜品，菜品必须落到三级分类。
+   历史订单只存菜品快照，不存分类 ID，这里改名 / 移动分组不会影响旧小票与 PDF。
+   员工身份下整页只读（新增 / 编辑 / 删除 / 上下架全部置灰）。 */
 (function (G) {
   'use strict';
   var U = G.U;
 
   function render(root) {
-    var tab = 'menu';   // menu | addons
+    var tab = 'dishes';              // dishes | cats | addons
     var photoMap = {};
+    var tree = [];
+    var filterThird = '__ALL__';     // 三级分类筛选
+    var editable = G.App.operator.can('menuEdit');
 
     var wrap = U.el('div', { class: 'page page-scroll' });
 
@@ -4039,180 +4945,416 @@ svg{ display:block; }
       wrap.innerHTML = '';
       var head = U.el('div', { class: 'page-title' }, [
         U.el('div', null, [
-          U.el('h1', null, '菜单 & 配料管理'),
-          U.el('div', { class: 'sub' }, '维护菜品、多规格、配料库')
+          U.el('h1', null, '菜单管理'),
+          U.el('div', { class: 'sub' }, editable ? '维护分类、菜品、多规格、配料库'
+                                                 : '员工模式：只读浏览，改菜单请切换为老板')
         ])
       ]);
       wrap.appendChild(head);
 
+      if (!editable) {
+        var tip = U.el('div', { class: 'card locked-tip' },
+          '🔒 当前为员工模式，菜单不可修改。需要改菜单 / 改分类，请点右上角「操作员」切回老板。');
+        wrap.appendChild(tip);
+      }
+
       var seg = U.el('div', { class: 'seg', style: 'margin-bottom:12px;' });
-      [['menu', '菜单管理'], ['addons', '配料库（小料 / 排除）']].forEach(function (p) {
+      [['dishes', '菜品管理'], ['cats', '分类管理'], ['addons', '配料库']].forEach(function (p) {
         var b = U.el('button', { class: tab === p[0] ? 'active' : '' }, p[1]);
         b.addEventListener('click', function () { tab = p[0]; refresh(); });
         seg.appendChild(b);
       });
       wrap.appendChild(seg);
 
-      if (tab === 'menu') renderMenu();
+      if (tab === 'dishes') renderDishes();
+      else if (tab === 'cats') renderCats();
       else renderAddons();
     }
 
-    function renderMenu() {
-      G.App.menu.list().then(function (items) {
-        // 工具栏
-        var ops = U.el('div', { class: 'card', style: 'display:flex;gap:8px;align-items:center;' });
-        var btn = U.el('button', { class: 'btn' }, '+ 新增菜品');
-        btn.addEventListener('click', function () { openMenuEdit(null); });
-        ops.appendChild(btn);
-        var inQ = U.el('input', { class: 'input', placeholder: '搜索菜品…', style: 'flex:1 1 auto;' });
+    /* ============ 分类树工具 ============ */
+    function loadTree(then) {
+      G.Cats.loadTree().then(function (t) { tree = t; then && then(); });
+    }
+    function flatThirds() {
+      var out = [];
+      tree.forEach(function (c) {
+        c.subs.forEach(function (s) {
+          s.thirds.forEach(function (t) {
+            out.push({ id: t.third.thirdId, name: c.cat.name + ' / ' + s.sub.name + ' / ' + t.third.name,
+                       catId: c.cat.categoryId, subId: s.sub.subId });
+          });
+        });
+      });
+      return out;
+    }
+    function pathOfIds(ids) {
+      var out = null;
+      tree.forEach(function (c) {
+        if (c.cat.categoryId !== ids.categoryId) return;
+        c.subs.forEach(function (s) {
+          if (s.sub.subId !== ids.subCategoryId) return;
+          s.thirds.forEach(function (t) {
+            if (t.third.thirdId !== ids.thirdCategoryId) return;
+            out = c.cat.name + ' / ' + s.sub.name + ' / ' + t.third.name;
+          });
+        });
+      });
+      return out || '未归类';
+    }
+
+    /* ============ 菜品管理 ============ */
+    function renderDishes() {
+      loadTree(function () {
+        var ops = U.el('div', { class: 'card', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;' });
+        var btnNew = U.el('button', { class: 'btn' }, '+ 新增菜品');
+        if (editable) btnNew.addEventListener('click', function () { openMenuEdit(null, refresh); });
+        else lockBtn(btnNew);
+        ops.appendChild(btnNew);
+
+        var selThird = U.el('select', { class: 'select', style: 'flex:1 1 180px;min-width:150px;' });
+        selThird.appendChild(U.el('option', { value: '__ALL__' }, '全部分类'));
+        flatThirds().forEach(function (t) { selThird.appendChild(U.el('option', { value: t.id }, t.name)); });
+        selThird.value = filterThird;
+        selThird.addEventListener('change', function () { filterThird = selThird.value; renderDishes(); });
+        ops.appendChild(selThird);
+
+        var btnBatch = U.el('button', { class: 'btn btn-ghost' }, '批量改归属');
+        if (editable) btnBatch.addEventListener('click', function () { openBatchAssign(); });
+        else lockBtn(btnBatch);
+        ops.appendChild(btnBatch);
+
+        var inQ = U.el('input', { class: 'input', placeholder: '搜索菜品…', style: 'flex:1 1 140px;min-width:130px;' });
         ops.appendChild(inQ);
         wrap.appendChild(ops);
 
         var list = U.el('div', { id: 'menu-list' });
         wrap.appendChild(list);
 
-        function draw() {
-          var q = (inQ.value || '').trim().toLowerCase();
-          var rows = items.filter(function (m) { return !q || (m.name || '').toLowerCase().indexOf(q) >= 0; });
-          list.innerHTML = '';
-          if (rows.length === 0) {
-            list.appendChild(U.el('div', { class: 'card' }, [
-              U.el('div', { class: 'empty' }, [
-                U.el('div', { class: 'em' }, '🍱'),
-                U.el('p', null, '暂无菜品，点击「+ 新增菜品」开始')
-              ])
-            ]));
-            return;
-          }
-          rows.forEach(function (m) {
-            var card = U.el('div', { class: 'card' });
-            var row = U.el('div', { class: 'menu-item-row' });
-            var thumb = U.el('div', { class: 'menu-thumb' });
-            if (m.photoId && photoMap[m.photoId]) {
-              thumb.innerHTML = '<img src="' + URL.createObjectURL(photoMap[m.photoId].blob) + '">';
-            } else {
-              thumb.textContent = (m.name || '?').slice(0, 1);
-            }
-            row.appendChild(thumb);
-            var meta = U.el('div', { style: 'flex:1 1 auto;min-width:0;' });
-            var specsLine = (m.specs && m.specs.length) ? m.specs.map(function (s) { return s.name + ' RM ' + U.formatMoneyPlain(s.price); }).join(' · ') : ('RM ' + U.formatMoneyPlain(m.price || 0));
-            meta.innerHTML =
-              '<div style="font-weight:800;font-size:15px;">' + U.escapeHTML(m.name) +
-                (m.available === false ? ' <span class="tag warn">已下架</span>' : '') +
-              '</div>' +
-              '<div style="font-size:12px;color:var(--muted);margin-top:3px;">' + U.escapeHTML(m.category || '默认') + '  ·  ' + (m.specs ? m.specs.length : 0) + ' 规格</div>' +
-              '<div style="font-size:12px;font-weight:700;color:var(--primary);margin-top:3px;">' + U.escapeHTML(specsLine) + '</div>';
-            row.appendChild(meta);
-
-            // 状态切换
-            var toggle = U.el('button', { class: 'icon-btn', html: m.available === false ? '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' });
-            toggle.title = m.available === false ? '上架' : '下架';
-            toggle.addEventListener('click', function () { m.available = !(m.available === false); G.App.menu.save(m).then(draw); });
-            row.appendChild(toggle);
-
-            var ed = U.el('button', { class: 'icon-btn', html: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 20h4l10-10-4-4L4 16v4z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>' });
-            ed.addEventListener('click', function () { openMenuEdit(m, draw); });
-            row.appendChild(ed);
-
-            var de = U.el('button', { class: 'icon-btn', html: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' });
-            de.addEventListener('click', function () {
-              U.confirm({ title: '删除菜品？', message: '「' + m.name + '」将从菜单移除', danger: true }).then(function (ok) {
-                if (!ok) return;
-                G.App.menu.del(m.id).then(draw);
-              });
+        G.App.menu.list().then(function (items) {
+          function draw() {
+            var q = (inQ.value || '').trim().toLowerCase();
+            var rows = items.filter(function (m) {
+              if (filterThird !== '__ALL__' && m.thirdCategoryId !== filterThird) return false;
+              if (q && (m.name || '').toLowerCase().indexOf(q) < 0) return false;
+              return true;
             });
-            row.appendChild(de);
-            card.appendChild(row);
-            list.appendChild(card);
-          });
-        }
-        inQ.addEventListener('input', U.debounce(draw, 100));
-        draw();
+            list.innerHTML = '';
+            if (rows.length === 0) {
+              list.appendChild(U.el('div', { class: 'card' }, [
+                U.el('div', { class: 'empty' }, [
+                  U.el('div', { class: 'em' }, '🍱'),
+                  U.el('p', null, '没有匹配的菜品')
+                ])
+              ]));
+              return;
+            }
+            rows.forEach(function (m) {
+              var card = U.el('div', { class: 'card dish-row' + (m.available === false ? ' off' : '') });
+              if (editable) card.setAttribute('draggable', 'true');
+              card.setAttribute('data-id', m.id);
 
-        // 预加载照片
-        items.forEach(function (m) {
-          if (m.photoId && !photoMap[m.photoId]) {
-            G.App.photos.get(m.photoId).then(function (p) { if (p) photoMap[m.photoId] = p; }).catch(function () {});
+              var row = U.el('div', { class: 'menu-item-row' });
+              var thumb = U.el('div', { class: 'menu-thumb' });
+              if (m.photoId && photoMap[m.photoId]) {
+                thumb.innerHTML = '<img src="' + URL.createObjectURL(photoMap[m.photoId].blob) + '" alt="">';
+              } else {
+                thumb.textContent = (m.name || '?').slice(0, 1);
+              }
+              row.appendChild(thumb);
+
+              var meta = U.el('div', { style: 'flex:1 1 auto;min-width:0;' });
+              var specsLine = (m.specs && m.specs.length)
+                ? m.specs.map(function (s) { return s.name + ' RM ' + U.formatMoneyPlain(s.price); }).join(' · ')
+                : ('RM ' + U.formatMoneyPlain(m.price || 0));
+              meta.innerHTML =
+                '<div style="font-weight:800;font-size:15px;">' + U.escapeHTML(m.name) +
+                  (m.available === false ? ' <span class="tag warn">已下架</span>' : '') +
+                '</div>' +
+                '<div style="font-size:12px;color:var(--muted);margin-top:3px;">📂 ' + U.escapeHTML(pathOfIds(m)) + '</div>' +
+                '<div style="font-size:12px;font-weight:700;color:var(--primary);margin-top:3px;">' + U.escapeHTML(specsLine) + '</div>';
+              row.appendChild(meta);
+
+              var acts = U.el('div', { style: 'display:flex;gap:4px;flex:0 0 auto;align-items:center;' });
+              if (editable) {
+                var toggle = U.el('button', { class: 'icon-btn', title: m.available === false ? '上架' : '下架',
+                  html: m.available === false
+                    ? '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                    : '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' });
+                toggle.addEventListener('click', function () {
+                  m.available = !(m.available === false);
+                  G.App.menu.save(m).then(refresh);
+                });
+                acts.appendChild(toggle);
+
+                var ed = U.el('button', { class: 'icon-btn', title: '编辑', html: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 20h4l10-10-4-4L4 16v4z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>' });
+                ed.addEventListener('click', function () { openMenuEdit(m, refresh); });
+                acts.appendChild(ed);
+
+                var de = U.el('button', { class: 'icon-btn', title: '删除', html: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' });
+                de.addEventListener('click', function () {
+                  U.confirm({ title: '删除菜品？', message: '「' + m.name + '」将从菜单移除', danger: true }).then(function (ok) {
+                    if (!ok) return;
+                    G.App.menu.del(m.id).then(refresh);
+                  });
+                });
+                acts.appendChild(de);
+              } else {
+                acts.appendChild(U.el('span', { class: 'cr-locked' }, '🔒'));
+              }
+              row.appendChild(acts);
+              card.appendChild(row);
+              list.appendChild(card);
+            });
+            bindDishDrag(list, rows);
+          }
+          inQ.addEventListener('input', U.debounce(draw, 120));
+          draw();
+
+          items.forEach(function (m) {
+            if (m.photoId && !photoMap[m.photoId]) {
+              G.App.photos.get(m.photoId).then(function (p) { if (p) photoMap[m.photoId] = p; }).catch(function () {});
+            }
+          });
+        });
+      });
+    }
+
+    /* 菜品拖拽排序：只在同一三级分组内换位置，落库后重画 */
+    function bindDishDrag(list, rows) {
+      if (!editable) return;
+      var dragEl = null;
+      list.ondragstart = function (e) {
+        var c = e.target.closest('.dish-row');
+        if (!c) return;
+        dragEl = c;
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', c.getAttribute('data-id')); } catch (err) {}
+        c.classList.add('dragging');
+      };
+      list.ondragover = function (e) {
+        if (!dragEl) return;
+        var over = e.target.closest('.dish-row');
+        if (!over || over === dragEl) return;
+        e.preventDefault();
+        var box = over.getBoundingClientRect();
+        list.insertBefore(dragEl, (e.clientY - box.top) > box.height / 2 ? over.nextSibling : over);
+      };
+      list.ondragend = function () {
+        if (!dragEl) return;
+        dragEl.classList.remove('dragging');
+        var order = U.qsa('.dish-row', list).map(function (x) { return x.getAttribute('data-id'); });
+        dragEl = null;
+        // 跨分组拖拽不生效（分组在弹窗里改），这里只保存同组内顺序
+        var byId = {};
+        rows.forEach(function (m) { byId[m.id] = m; });
+        var jobs = [];
+        order.forEach(function (id, i) {
+          var m = byId[id];
+          if (m && m.sort !== (i + 1) * 10) { m.sort = (i + 1) * 10; jobs.push(G.App.menu.save(m)); }
+        });
+        Promise.all(jobs).then(function () { if (jobs.length) U.toast('顺序已保存', 'ok'); });
+      };
+    }
+
+    /* 批量把当前筛选出的菜品迁到另一个三级分类 */
+    function openBatchAssign() {
+      G.App.menu.list().then(function (items) {
+        var targets = items.filter(function (m) {
+          return filterThird === '__ALL__' ? true : m.thirdCategoryId === filterThird;
+        });
+        if (!targets.length) { U.toast('当前筛选下没有菜品', 'err'); return; }
+        var thirds = flatThirds();
+        if (!thirds.length) { U.toast('请先到「分类管理」建好三级分类', 'err'); return; }
+        var html =
+          '<div class="modal-mask"><div class="modal" style="max-width:420px;">' +
+            '<div class="modal-head"><h3>批量改归属</h3></div>' +
+            '<div class="modal-body">' +
+              '<p style="font-size:13px;color:var(--muted);margin-bottom:10px;">' +
+                '把当前筛选下的 <b>' + targets.length + '</b> 道菜迁移到：</p>' +
+              '<div class="field"><label>目标三级分类</label>' +
+                '<select class="select" id="ba-third">' +
+                  thirds.map(function (t) { return '<option value="' + t.id + '">' + U.escapeHTML(t.name) + '</option>'; }).join('') +
+                '</select>' +
+              '</div>' +
+            '</div>' +
+            '<div class="modal-foot">' +
+              '<button class="btn btn-gray" data-act="cancel">取消</button>' +
+              '<button class="btn" data-act="ok">确认迁移</button>' +
+            '</div>' +
+          '</div></div>';
+        var m = U.openModal(html);
+        m.addEventListener('click', function (e) {
+          if (e.target === m || e.target.closest('[data-act="cancel"]')) { U.closeAllModals(); return; }
+          if (e.target.closest('[data-act="ok"]')) {
+            var id = m.querySelector('#ba-third').value;
+            var t = thirds.filter(function (x) { return x.id === id; })[0];
+            U.closeAllModals();
+            G.App.menu.assign(targets.map(function (x) { return x.id; }),
+                              { categoryId: t.catId, subCategoryId: t.subId, thirdCategoryId: t.id })
+              .then(function () { U.toast('已迁移 ' + targets.length + ' 道菜', 'ok'); refresh(); });
           }
         });
       });
     }
 
+    /* ============ 分类管理 ============ */
+    function renderCats() {
+      loadTree(function () {
+        var ops = U.el('div', { class: 'card', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;' });
+        var btnNew = U.el('button', { class: 'btn' }, '+ 新增一级分类');
+        if (editable) {
+          btnNew.addEventListener('click', function () {
+            G.Cats.create('cat').then(function (ok) { if (ok) { U.toast('已新增', 'ok'); refresh(); } });
+          });
+        } else lockBtn(btnNew);
+        ops.appendChild(btnNew);
+        ops.appendChild(U.el('span', { class: 'hint' }, '拖动行可排序 · 有子级或挂菜品时禁止删除'));
+        wrap.appendChild(ops);
+
+        var box = U.el('div', { class: 'card cat-tree' });
+        wrap.appendChild(box);
+        G.Cats.renderTree(box, tree, { editable: editable, onChanged: function () { refresh(); } });
+
+        var help = U.el('div', { class: 'card' });
+        help.innerHTML =
+          '<div class="card-title">怎么用</div>' +
+          '<ol style="font-size:13px;color:var(--muted);line-height:1.9;padding-left:18px;">' +
+            '<li>先建一级分类，如：面类 / 饭类 / 粥类</li>' +
+            '<li>在一级下建二级，如：汤面 / 拌面</li>' +
+            '<li>在二级下建三级，如：细汤面 / 粗汤面</li>' +
+            '<li>回到「菜品管理」新增菜品，逐级选到三级分类</li>' +
+            '<li>点餐页会按一 → 二 → 三级标签依次展开</li>' +
+          '</ol>';
+        wrap.appendChild(help);
+      });
+    }
+
+    /* ============ 菜品编辑弹窗 ============ */
     function openMenuEdit(menu, onSaved) {
-      menu = menu || { name: '', category: '', price: 0, specs: [], available: true };
-      var tempPhotoBlob = null, tempPhotoId = menu.photoId || '';
-      var html =
-        '<div class="modal-mask"><div class="modal" style="max-width:560px;">' +
-          '<div class="modal-head"><h3>' + (menu.id ? '编辑菜品' : '新增菜品') + '</h3><button class="icon-btn" data-act="x" aria-label="关闭">' +
-            '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' +
-          '</button></div>' +
-          '<div class="modal-body">' +
-            '<div class="field"><label>菜品名</label><input class="input" id="m-name" value="' + U.escapeHTML(menu.name) + '"></div>' +
-            '<div class="field"><label>分类</label><input class="input" id="m-cat" placeholder="例如：饭面 / 小吃 / 饮品" value="' + U.escapeHTML(menu.category || '') + '"></div>' +
-            '<div class="field"><label>规格（多种大小独立定价）</label><div id="m-specs"></div>' +
-              '<button class="btn btn-soft btn-sm" id="m-add-spec">+ 添加规格</button></div>' +
-            '<div class="field"><label>菜品实拍照片（可选，用于 PDF 报告）</label>' +
-              '<div style="display:flex;gap:10px;align-items:center;">' +
-                '<div id="m-thumb" style="width:80px;height:80px;border-radius:12px;background:linear-gradient(135deg,#FFF1E0,#FFE2C6);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--primary);overflow:hidden;"></div>' +
-                '<div style="flex:1 1 auto;">' +
-                  '<input type="file" accept="image/*" id="m-file" style="display:none;">' +
-                  '<button class="btn btn-ghost btn-sm" id="m-pick">选择 / 拍照</button>' +
-                  '<button class="btn btn-danger btn-sm" id="m-del-photo" style="margin-left:6px;">移除</button>' +
+      loadTree(function () {
+        menu = menu || { name: '', price: 0, specs: [], available: true };
+        var tempPhotoBlob = null, tempPhotoId = menu.photoId || '';
+        var thirds = flatThirds();
+
+        var html =
+          '<div class="modal-mask"><div class="modal" style="max-width:560px;">' +
+            '<div class="modal-head"><h3>' + (menu.id ? '编辑菜品' : '新增菜品') + '</h3>' +
+              '<button class="icon-btn" data-act="x" aria-label="关闭">' +
+                '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' +
+              '</button></div>' +
+            '<div class="modal-body">' +
+              '<div class="field"><label>菜品名</label><input class="input" id="m-name" value="' + U.escapeHTML(menu.name) + '"></div>' +
+              '<div class="field"><label>归属分类（必须选到三级）</label>' +
+                '<div class="cat-pick">' +
+                  '<select class="select" id="m-cat"></select>' +
+                  '<select class="select" id="m-sub"></select>' +
+                  '<select class="select" id="m-third"></select>' +
+                '</div>' +
+                (thirds.length ? '' : '<div style="font-size:12px;color:var(--danger);margin-top:6px;">还没有三级分类，请先到「分类管理」创建</div>') +
+              '</div>' +
+              '<div class="field"><label>规格（多种大小独立定价）</label><div id="m-specs"></div>' +
+                '<button class="btn btn-soft btn-sm" id="m-add-spec">+ 添加规格</button></div>' +
+              '<div class="field"><label>菜品实拍照片（可选，用于 PDF 报告）</label>' +
+                '<div style="display:flex;gap:10px;align-items:center;">' +
+                  '<div id="m-thumb" style="width:80px;height:80px;border-radius:12px;background:linear-gradient(135deg,#FFF1E0,#FFE2C6);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--primary);overflow:hidden;"></div>' +
+                  '<div style="flex:1 1 auto;">' +
+                    '<input type="file" accept="image/*" id="m-file" style="display:none;">' +
+                    '<button class="btn btn-ghost btn-sm" id="m-pick">选择 / 拍照</button>' +
+                    '<button class="btn btn-danger btn-sm" id="m-del-photo" style="margin-left:6px;">移除</button>' +
+                  '</div>' +
                 '</div>' +
               '</div>' +
             '</div>' +
-          '</div>' +
-          '<div class="modal-foot">' +
-            '<button class="btn btn-gray" data-act="cancel">取消</button>' +
-            '<button class="btn" data-act="ok">保存</button>' +
-          '</div>' +
-        '</div></div>';
-      var m = U.openModal(html);
+            '<div class="modal-foot">' +
+              '<button class="btn btn-gray" data-act="cancel">取消</button>' +
+              '<button class="btn" data-act="ok">保存</button>' +
+            '</div>' +
+          '</div></div>';
+        var m = U.openModal(html);
 
-      var specsDiv = m.querySelector('#m-specs');
-      function addSpecRow(s) {
-        s = s || { id: U.uid(), name: '', price: 0 };
-        var r = U.el('div', { class: 'spec-row' });
-        r.innerHTML =
-          '<input class="input" placeholder="规格名（如：大份）" value="' + U.escapeHTML(s.name) + '">' +
-          '<input class="input input-money" type="number" step="0.01" min="0" placeholder="价格" value="' + (s.price || 0) + '">' +
-          '<button class="icon-btn" aria-label="删除">' +
-            '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' +
-          '</button>';
-        r.querySelector('button').addEventListener('click', function () { r.remove(); });
-        specsDiv.appendChild(r);
-      }
-      (menu.specs && menu.specs.length ? menu.specs : [{ name: '标准', price: menu.price || 0 }]).forEach(addSpecRow);
-      m.querySelector('#m-add-spec').addEventListener('click', function () { addSpecRow(); });
+        /* ---- 三级联动 ---- */
+        var selCat = m.querySelector('#m-cat');
+        var selSub = m.querySelector('#m-sub');
+        var selThird = m.querySelector('#m-third');
 
-      // 图片
-      var thumb = m.querySelector('#m-thumb');
-      function paintThumb() {
-        if (tempPhotoBlob) {
-          thumb.innerHTML = '<img src="' + URL.createObjectURL(tempPhotoBlob) + '" style="width:100%;height:100%;object-fit:cover;">';
-        } else if (tempPhotoId && photoMap[tempPhotoId]) {
-          thumb.innerHTML = '<img src="' + URL.createObjectURL(photoMap[tempPhotoId].blob) + '" style="width:100%;height:100%;object-fit:cover;">';
-        } else {
-          thumb.textContent = (m.querySelector('#m-name').value || '?').slice(0, 1);
+        function fillCats() {
+          selCat.innerHTML = tree.map(function (c) {
+            return '<option value="' + c.cat.categoryId + '">' + U.escapeHTML(c.cat.name) + '</option>';
+          }).join('');
+          var want = menu.categoryId || (tree[0] && tree[0].cat.categoryId);
+          if (want) selCat.value = want;
+          fillSubs();
         }
-      }
-      paintThumb();
-      m.querySelector('#m-pick').addEventListener('click', function () { m.querySelector('#m-file').click(); });
-      m.querySelector('#m-file').addEventListener('change', function (e) {
-        var f = e.target.files && e.target.files[0];
-        if (!f) return;
-        tempPhotoBlob = f; paintThumb();
-      });
-      m.querySelector('#m-del-photo').addEventListener('click', function () {
-        tempPhotoBlob = null; tempPhotoId = ''; paintThumb();
-      });
+        function fillSubs() {
+          var c = tree.filter(function (x) { return x.cat.categoryId === selCat.value; })[0];
+          var subs = c ? c.subs : [];
+          selSub.innerHTML = subs.map(function (s) {
+            return '<option value="' + s.sub.subId + '">' + U.escapeHTML(s.sub.name) + '</option>';
+          }).join('');
+          var want = menu.subCategoryId;
+          if (want && subs.some(function (s) { return s.sub.subId === want; })) selSub.value = want;
+          fillThirds();
+        }
+        function fillThirds() {
+          var c = tree.filter(function (x) { return x.cat.categoryId === selCat.value; })[0];
+          var s = c ? c.subs.filter(function (x) { return x.sub.subId === selSub.value; })[0] : null;
+          var ths = s ? s.thirds : [];
+          selThird.innerHTML = ths.map(function (t) {
+            return '<option value="' + t.third.thirdId + '">' + U.escapeHTML(t.third.name) + '</option>';
+          }).join('');
+          var want = menu.thirdCategoryId;
+          if (want && ths.some(function (t) { return t.third.thirdId === want; })) selThird.value = want;
+        }
+        selCat.addEventListener('change', fillSubs);
+        selSub.addEventListener('change', fillThirds);
+        fillCats();
 
-      m.addEventListener('click', function (e) {
-        if (e.target.closest('[data-act="cancel"]') || e.target.closest('[data-act="x"]')) U.closeAllModals();
-        if (e.target.closest('[data-act="ok"]')) {
+        /* ---- 规格 ---- */
+        var specsDiv = m.querySelector('#m-specs');
+        function addSpecRow(s) {
+          s = s || { id: U.uid(), name: '', price: 0 };
+          var r = U.el('div', { class: 'spec-row' });
+          r.innerHTML =
+            '<input class="input" placeholder="规格名（如：大份）" value="' + U.escapeHTML(s.name) + '">' +
+            '<input class="input input-money" type="number" step="0.01" min="0" placeholder="价格" value="' + (s.price || 0) + '">' +
+            '<button class="icon-btn" aria-label="删除">' +
+              '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' +
+            '</button>';
+          r.querySelector('button').addEventListener('click', function () { r.remove(); });
+          specsDiv.appendChild(r);
+        }
+        (menu.specs && menu.specs.length ? menu.specs : [{ name: '标准', price: menu.price || 0 }]).forEach(addSpecRow);
+        m.querySelector('#m-add-spec').addEventListener('click', function () { addSpecRow(); });
+
+        /* ---- 图片 ---- */
+        var thumb = m.querySelector('#m-thumb');
+        function paintThumb() {
+          if (tempPhotoBlob) {
+            thumb.innerHTML = '<img src="' + URL.createObjectURL(tempPhotoBlob) + '" style="width:100%;height:100%;object-fit:cover;">';
+          } else if (tempPhotoId && photoMap[tempPhotoId]) {
+            thumb.innerHTML = '<img src="' + URL.createObjectURL(photoMap[tempPhotoId].blob) + '" style="width:100%;height:100%;object-fit:cover;">';
+          } else {
+            thumb.textContent = (m.querySelector('#m-name').value || '?').slice(0, 1);
+          }
+        }
+        paintThumb();
+        m.querySelector('#m-pick').addEventListener('click', function () { m.querySelector('#m-file').click(); });
+        m.querySelector('#m-file').addEventListener('change', function (e) {
+          var f = e.target.files && e.target.files[0];
+          if (!f) return;
+          tempPhotoBlob = f; paintThumb();
+        });
+        m.querySelector('#m-del-photo').addEventListener('click', function () {
+          tempPhotoBlob = null; tempPhotoId = ''; paintThumb();
+        });
+
+        /* ---- 保存 ---- */
+        m.addEventListener('click', function (e) {
+          if (e.target === m || e.target.closest('[data-act="cancel"]') || e.target.closest('[data-act="x"]')) { U.closeAllModals(); return; }
+          if (!e.target.closest('[data-act="ok"]')) return;
           var name = m.querySelector('#m-name').value.trim();
           if (!name) { U.toast('请填写菜名', 'err'); return; }
-          var cat = m.querySelector('#m-cat').value.trim() || '默认';
+          if (!selThird.value) { U.toast('请先到「分类管理」建好三级分类', 'err'); return; }
           var specs = [];
           specsDiv.querySelectorAll('.spec-row').forEach(function (r) {
             var ins = r.querySelectorAll('input');
@@ -4221,26 +5363,38 @@ svg{ display:block; }
             if (n) specs.push({ id: U.uid(), name: n, price: p });
           });
           if (specs.length === 0) { U.toast('请至少添加一种规格', 'err'); return; }
-          var price = specs[0].price;
-          var rec = Object.assign({}, menu, { name: name, category: cat, specs: specs, price: price });
+          var rec = Object.assign({}, menu, {
+            name: name,
+            categoryId: selCat.value,
+            subCategoryId: selSub.value,
+            thirdCategoryId: selThird.value,
+            specs: specs,
+            price: specs[0].price
+          });
           var save = function (photoId) {
             rec.photoId = photoId;
-            G.App.menu.save(rec).then(function () { U.closeAllModals(); onSaved && onSaved(); });
+            G.App.menu.save(rec).then(function () {
+              U.closeAllModals();
+              U.toast('已保存', 'ok');
+              onSaved && onSaved();
+            });
           };
-          if (tempPhotoBlob) {
-            G.App.photos.save(tempPhotoBlob, name + '.jpg').then(function (p) { save(p.id); });
-          } else {
-            save(tempPhotoId);
-          }
-        }
+          if (tempPhotoBlob) G.App.photos.save(tempPhotoBlob, name + '.jpg').then(function (p) { save(p.id); });
+          else save(tempPhotoId);
+        });
       });
     }
 
+    /* ============ 配料库 ============ */
     function renderAddons() {
       G.App.addons.list().then(function (rows) {
         var ops = U.el('div', { class: 'card', style: 'display:flex;gap:8px;align-items:center;' });
         var btnExtra = U.el('button', { class: 'btn' }, '+ 加料');
         var btnIng = U.el('button', { class: 'btn btn-ghost' }, '+ 可去配料');
+        if (editable) {
+          btnExtra.addEventListener('click', function () { addOne('extra'); });
+          btnIng.addEventListener('click', function () { addOne('ingredient'); });
+        } else { lockBtn(btnExtra); lockBtn(btnIng); }
         ops.appendChild(btnExtra);
         ops.appendChild(btnIng);
         wrap.appendChild(ops);
@@ -4251,45 +5405,38 @@ svg{ display:block; }
         var c1 = U.el('div', { class: 'card' });
         c1.innerHTML = '<div class="card-title">加料 / 小料 <span class="hint">' + extras.length + ' 项</span></div>';
         if (extras.length === 0) c1.appendChild(U.el('div', { class: 'empty' }, [U.el('p', null, '暂无加料')]));
-        extras.forEach(function (a) {
-          var r = U.el('div', { class: 'row' });
-          r.innerHTML =
-            '<div class="grow">' +
-              '<div class="t">' + U.escapeHTML(a.name) + '</div>' +
-              '<div class="s">' + (a.price > 0 ? '加 RM ' + U.formatMoneyPlain(a.price) : '免费') + '</div>' +
-            '</div>';
-          var de = U.el('button', { class: 'icon-btn', html: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' });
-          de.addEventListener('click', function () {
-            U.confirm({ title: '删除加料？', message: '「' + a.name + '」', danger: true }).then(function (ok) {
-              if (!ok) return;
-              G.App.addons.del(a.id).then(refresh);
-            });
-          });
-          r.appendChild(de);
-          c1.appendChild(r);
-        });
+        extras.forEach(function (a) { c1.appendChild(addonRow(a)); });
         wrap.appendChild(c1);
 
         var c2 = U.el('div', { class: 'card' });
         c2.innerHTML = '<div class="card-title">可去配料 <span class="hint">' + ings.length + ' 项</span></div>';
         if (ings.length === 0) c2.appendChild(U.el('div', { class: 'empty' }, [U.el('p', null, '暂无可去配料')]));
-        ings.forEach(function (a) {
-          var r = U.el('div', { class: 'row' });
-          r.innerHTML = '<div class="grow"><div class="t">不要 ' + U.escapeHTML(a.name) + '</div></div>';
-          var de = U.el('button', { class: 'icon-btn', html: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' });
-          de.addEventListener('click', function () {
-            U.confirm({ title: '删除该配料？', message: '「' + a.name + '」', danger: true }).then(function (ok) {
-              if (!ok) return;
-              G.App.addons.del(a.id).then(refresh);
-            });
-          });
-          r.appendChild(de);
-          c2.appendChild(r);
-        });
+        ings.forEach(function (a) { c2.appendChild(addonRow(a)); });
         wrap.appendChild(c2);
 
+        function addonRow(a) {
+          var r = U.el('div', { class: 'row' });
+          var isExtra = a.kind === 'extra';
+          r.innerHTML =
+            '<div class="grow">' +
+              '<div class="t">' + U.escapeHTML(isExtra ? a.name : ('不要 ' + a.name)) + '</div>' +
+              (isExtra ? '<div class="s">' + (a.price > 0 ? '加 RM ' + U.formatMoneyPlain(a.price) : '免费') + '</div>' : '') +
+            '</div>';
+          if (editable) {
+            var de = U.el('button', { class: 'icon-btn', html: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' });
+            de.addEventListener('click', function () {
+              U.confirm({ title: '删除？', message: '「' + a.name + '」', danger: true }).then(function (ok) {
+                if (!ok) return;
+                G.App.addons.del(a.id).then(refresh);
+              });
+            });
+            r.appendChild(de);
+          }
+          return r;
+        }
+
         function addOne(kind) {
-          U.prompt({ title: kind === 'extra' ? '新增加料' : '新增可去配料', label: '名称（如：加蛋）', placeholder: '' }).then(function (v) {
+          U.prompt({ title: kind === 'extra' ? '新增加料' : '新增可去配料', label: '名称（如：加蛋）' }).then(function (v) {
             if (!v) return;
             v = v.trim(); if (!v) return;
             var rec = { name: v, kind: kind };
@@ -4304,9 +5451,13 @@ svg{ display:block; }
             }
           });
         }
-        btnExtra.addEventListener('click', function () { addOne('extra'); });
-        btnIng.addEventListener('click', function () { addOne('ingredient'); });
       });
+    }
+
+    function lockBtn(b) {
+      b.disabled = true;
+      b.classList.add('is-locked');
+      b.title = '员工模式无此权限，请在右上角切换为老板';
     }
 
     root.appendChild(wrap);
@@ -4443,7 +5594,7 @@ svg{ display:block; }
       G.App.seq.get().then(function (cnt) {
         var r4 = U.el('div', { class: 'set-row' });
         r4.innerHTML = '<div><div class="t">单号计数</div>' +
-          '<div class="d">堂食已用 ' + cnt.dineInSeq + ' 号（满 9999 回 DI 001）· 外卖 ' +
+          '<div class="d">堂食已用 ' + cnt.dineInSeq + ' 号（满 9999 回 DI 001）· 外带 ' +
           (cnt.takeawayDate === U.todayKey() ? '今日已用 ' + cnt.takeawaySeq + ' 号' : '今日尚未开单') +
           '</div></div>';
         var btnResetSeq = U.el('button', { class: 'btn btn-danger btn-sm' }, '校正');
@@ -4559,6 +5710,15 @@ svg{ display:block; }
       wrap.appendChild(c5);
     }
 
+    /* 员工身份下把高危按钮置灰：能看见、点不动，并说明原因 */
+    function lockIfBlocked(btn, action, what) {
+      if (G.App.operator.can(action)) return false;
+      btn.disabled = true;
+      btn.classList.add('is-locked');
+      btn.title = '员工模式无此权限（' + what + '），请在右上角切换为老板';
+      return true;
+    }
+
     function renderPDF() {
       var c1 = U.el('div', { class: 'card' });
       c1.innerHTML = '<div class="card-title">批量生成 PDF 报告</div>';
@@ -4596,12 +5756,15 @@ svg{ display:block; }
       c2.appendChild(list);
       var ops = U.el('div', { style: 'display:flex;gap:8px;margin-top:10px;justify-content:flex-end;' });
       var btnClr = U.el('button', { class: 'btn btn-danger' }, '清空全部档案');
+      if (!lockIfBlocked(btnClr, 'pdfDelete', '删除 PDF 档案')) {
       btnClr.addEventListener('click', function () {
+        if (!G.App.operator.can('pdfDelete')) { U.toast('员工模式无此权限，请切换为老板', 'err'); return; }
         U.confirm({ title: '清空所有 PDF 档案？', message: '本地数据库中所有 PDF 将被删除', danger: true }).then(function (ok) {
           if (!ok) return;
           G.App.pdf.clear().then(refresh);
         });
       });
+      }
       ops.appendChild(btnClr);
       c2.appendChild(ops);
       wrap.appendChild(c2);
@@ -4625,12 +5788,16 @@ svg{ display:block; }
             '</div>';
           row.querySelector('[data-act="pre"]').addEventListener('click', function () { G.PDF.preview(it.pdfBlob); });
           row.querySelector('[data-act="dl"]').addEventListener('click', function () { U.download(it.fileName, it.pdfBlob); });
-          row.querySelector('[data-act="del"]').addEventListener('click', function () {
+          var btnDelPdf = row.querySelector('[data-act="del"]');
+          if (!lockIfBlocked(btnDelPdf, 'pdfDelete', '删除 PDF 档案')) {
+          btnDelPdf.addEventListener('click', function () {
+            if (!G.App.operator.can('pdfDelete')) { U.toast('员工模式无此权限，请切换为老板', 'err'); return; }
             U.confirm({ title: '删除该 PDF？', message: it.fileName, danger: true }).then(function (ok) {
               if (!ok) return;
               G.App.pdf.del(it.pdfId).then(refresh);
             });
           });
+          }
           list.appendChild(row);
         });
       });
@@ -4641,13 +5808,16 @@ svg{ display:block; }
       c1.innerHTML = '<div class="card-title">JSON 备份导出</div>';
       c1.appendChild(U.el('p', { style: 'font-size:13px;color:var(--muted);margin-bottom:10px;' }, '导出菜单、配料、订单、收支的全量数据为 JSON 文件（不含 PDF 二进制）。'));
       var btn = U.el('button', { class: 'btn' }, '导出 JSON 备份');
+      if (!lockIfBlocked(btn, 'export', '导出 JSON 备份')) {
       btn.addEventListener('click', function () {
+        if (!G.App.operator.can('export')) { U.toast('员工模式无此权限，请切换为老板', 'err'); return; }
         G.App.io.exportJSON().then(function (obj) {
           var txt = JSON.stringify(obj, null, 2);
           U.download('点餐收银-备份-' + U.todayKey() + '.json', new Blob([txt], { type: 'application/json' }));
           U.toast('已导出', 'ok');
         });
       });
+      }
       c1.appendChild(btn);
       wrap.appendChild(c1);
 
@@ -4677,12 +5847,16 @@ svg{ display:block; }
       c3.innerHTML = '<div class="card-title">危险操作</div>';
       var ops = U.el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;' });
       var btnClrOrders = U.el('button', { class: 'btn btn-danger' }, '清空所有订单');
+      // 需求没点名这一项，但它比「全部重置」更狠（历史订单没了），一并按高危处理
+      if (!lockIfBlocked(btnClrOrders, 'reset', '清空历史订单')) {
       btnClrOrders.addEventListener('click', function () {
+        if (!G.App.operator.can('reset')) { U.toast('员工模式无此权限，请切换为老板', 'err'); return; }
         U.confirm({ title: '清空所有订单？', message: '所有历史订单将永久删除', danger: true, okText: '永久删除' }).then(function (ok) {
           if (!ok) return;
           G.App.orders.clearAll().then(function () { U.toast('已清空', 'ok'); });
         });
       });
+      }
       ops.appendChild(btnClrOrders);
       c3.appendChild(ops);
       wrap.appendChild(c3);
@@ -4699,7 +5873,7 @@ svg{ display:block; }
 
 /* ============ 67-views-tables.js ============ */
 /* 67-views-tables.js · 台桌管理页
-   外卖独立大卡片（置顶优先） + 堂食桌台自适应网格
+   外带独立大卡片（置顶优先） + 堂食桌台自适应网格
    状态：空闲 idle / 使用中 using / 待付款 pending
    桌号数量来自 cfg.tableCount，改配置即可扩充，本文件不含硬编码上限。 */
 (function (G) {
@@ -4732,7 +5906,7 @@ svg{ display:block; }
         '</div>';
       wrap.appendChild(head);
 
-      // ===== 外卖工位（置顶，优先级最高） =====
+      // ===== 外带工位（置顶，优先级最高） =====
       var taBox = U.el('div', { id: 'ta-box' });
       wrap.appendChild(taBox);
 
@@ -4762,7 +5936,15 @@ svg{ display:block; }
         wrap.scrollTop = keepScroll;
       });
 
-      wrap.querySelector('#btn-reset').addEventListener('click', onReset);
+      // 员工身份：全部重置置灰不可点（高危操作，需切回老板）
+      var btnReset = wrap.querySelector('#btn-reset');
+      if (!G.App.operator.can('reset')) {
+        btnReset.disabled = true;
+        btnReset.classList.add('is-locked');
+        btnReset.title = '员工模式无此权限，请在右上角切换为老板';
+      } else {
+        btnReset.addEventListener('click', onReset);
+      }
       wrap.querySelector('#btn-refresh').addEventListener('click', function () {
         refresh(); U.toast('已刷新', 'ok');
       });
@@ -4809,7 +5991,7 @@ svg{ display:block; }
       }).then(function (ok) { if (ok) then(); });
     }
 
-    /* ---------- 外卖大卡片 ---------- */
+    /* ---------- 外带大卡片 ---------- */
     function renderTakeaway(cart) {
       var box = wrap.querySelector('#ta-box');
       if (!box) return;
@@ -4823,22 +6005,22 @@ svg{ display:block; }
       var card = U.el('div', { class: 'table-card ta-card status-' + status, style: 'width:100%;' });
       card.innerHTML =
         '<div class="ta-head">' +
-          '<span style="font-size:13px;font-weight:800;">📦 外卖订单</span>' +
+          '<span style="font-size:13px;font-weight:800;">📦 外带订单</span>' +
           '<span class="ta-badge">' + STATE_TEXT[status] + (isLocked ? ' 🔒' : '') + '</span>' +
         '</div>' +
         '<div class="ta-body">' +
-          '<div class="tc-num" style="font-size:16px;">外卖工位</div>' +
+          '<div class="tc-num" style="font-size:16px;">外带工位</div>' +
           '<div class="tc-state">' + (status === 'idle' ? '暂无进行中订单' : ('当前 RM ' + U.formatMoneyPlain(total))) + '</div>' +
           (cart && cart.orderNo ? '<div style="margin-top:4px;"><span class="order-no">' + U.escapeHTML(cart.orderNo) + '</span></div>' : '') +
         '</div>';
 
       card.addEventListener('click', function () {
         if (status === 'idle') {
-          guard(slotId, '外卖工位', function () { G.Router.go('#/order?slot=' + slotId); });
+          guard(slotId, '外带工位', function () { G.Router.go('#/order?slot=' + slotId); });
         } else if (status === 'pending') {
-          guard(slotId, '外卖工位', function () { openPendingModal(cart, '外卖'); });
+          guard(slotId, '外带工位', function () { openPendingModal(cart, '外带'); });
         } else {
-          guard(slotId, '外卖工位', function () { openBusyModal(cart, '外卖'); });
+          guard(slotId, '外带工位', function () { openBusyModal(cart, '外带'); });
         }
       });
       box.appendChild(card);
@@ -4953,14 +6135,16 @@ svg{ display:block; }
     }
 
     function onReset() {
+      // 按钮已置灰，这里再兜一道：避免通过其它入口绕进来
+      if (!G.App.operator.can('reset')) { U.toast('员工模式无此权限，请切换为老板', 'err'); return; }
       U.confirm({
-        title: '重置全部桌台与外卖？',
-        message: '警告：确定要重置全部桌台与外卖？所有未结账购物车将会清空，历史订单不会删除。',
+        title: '重置全部桌台与外带？',
+        message: '警告：确定要重置全部桌台与外带？所有未结账购物车将会清空，历史订单不会删除。',
         okText: '确认重置', cancelText: '取消', danger: true
       }).then(function (ok) {
         if (!ok) return;
         G.App.carts.clearAll().then(function () {
-          U.toast('已重置全部桌台与外卖', 'ok');
+          U.toast('已重置全部桌台与外带', 'ok');
           refresh();
         });
       });
@@ -4983,14 +6167,17 @@ svg{ display:block; }
 
 
 /* ============ 68-views-checkout.js ============ */
-/* 68-views-checkout.js · 结账页
-   从台桌页 / 点餐页带入 slot，展示账单，确认后：
-   生成单号（DI / TA）→ 写历史 → 清空购物车 → 打印小票 → 返回台桌 */
+/* 68-views-checkout.js · 结账页（内置计算器 + 找零）
+   从台桌页 / 点餐页带入 slot：展示来源与单号 → 虚拟键盘录入实收 → 实时算找零 →
+   生成正式订单 → 出小票 → 清空购物车 → 返回台桌。
+   边界：应付永远由购物车菜品算出，键盘只负责实收；订单落库 due / paid / change 三字段。 */
 (function (G) {
   'use strict';
   var U = G.U;
 
   var PAY_METHODS = ['CASH 现金', 'Bank 银行转账', 'Tng E-Wallet', 'Boost Pay', 'Shopee Pay', 'Grab Pay'];
+
+  function money(n) { return Math.round((+n || 0) * 100) / 100; }
 
   function render(root, params) {
     params = params || {};
@@ -4998,20 +6185,50 @@ svg{ display:block; }
     var wrap = U.el('div', { class: 'page page-scroll' });
     root.appendChild(wrap);
 
-    // 结账期间也要占着工位：否则收银员在点钞时，别的会话能把这桌当成空闲抢进去
+    // 结账期间也要占着工位：收银员在点钞时，别的会话不能把这桌当空闲抢进去
     G.Flow.holdLock(slotId);
 
+    var state = { cart: null, paidStr: '', orderNo: '' };
+
     G.App.carts.get(slotId).then(function (cart) {
-      draw(cart);
+      state.cart = cart;
+      // 单号要先拿到并回写到购物车：页面顶部就要显示「单号 DI 001」，
+      // 而且同一张单重进结账页必须沿用同一个号，不能每次都消耗一次计数。
+      return G.Flow.ensureOrderNo(cart).then(function (no) {
+        state.orderNo = no;
+        return G.App.carts.save(cart);
+      });
+    }).then(function () {
+      draw();
     });
 
-    function draw(cart) {
-      wrap.innerHTML = '';
-      var isTA = cart.kind === 'takeaway';
-      var total = 0; (cart.items || []).forEach(function (l) { total += +l.subtotal || 0; });
-      total = Math.round(total * 100) / 100;
+    function dueOf() {
+      var t = 0;
+      ((state.cart && state.cart.items) || []).forEach(function (l) { t += +l.subtotal || 0; });
+      return money(t);
+    }
+    function paidOf() {
+      if (state.paidStr === '' ) return 0;
+      var v = parseFloat(state.paidStr);
+      return isNaN(v) ? 0 : v;
+    }
+    function changeOf() { return money(paidOf() - dueOf()); }
+    /* 已输入内容但金额不够 = 明确的「收款不足」；空输入只是还没开始收，不算错误 */
+    function insufficient() { return state.paidStr !== '' && paidOf() < dueOf() - 0.0001; }
 
-      // 顶部橘色栏目
+    /* 键盘输入规则统一走 Flow.keypad（纯函数，便于测试与复用） */
+    function pushKey(k) {
+      state.paidStr = G.Flow.keypad(state.paidStr, k);
+      paintPay();
+    }
+
+    function draw() {
+      wrap.innerHTML = '';
+      var cart = state.cart;
+      var isTA = cart.kind === 'takeaway';
+      var due = dueOf();
+
+      /* ---------- 顶部橘色栏目 ---------- */
       var head = U.el('div', { class: 'bar-orange', style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex:0 0 auto;' });
       head.innerHTML =
         '<div>' +
@@ -5039,31 +6256,25 @@ svg{ display:block; }
         return;
       }
 
-      // 桌台 / 人数 / 支付
-      var info = U.el('div', { class: 'card' });
-      if (!isTA) {
-        var r1 = U.el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;' });
-        r1.innerHTML =
-          '<div><label style="font-size:13px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px;">桌号</label>' +
-            '<input class="input" id="in-table" type="number" min="1" max="' + (+G.App.cfg.get('tableCount') || 50) + '" value="' + (cart.table || 1) + '"></div>' +
-          '<div><label style="font-size:13px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px;">人数</label>' +
-            '<input class="input" id="in-pax" type="number" min="1" max="10" value="' + (cart.pax || 2) + '"></div>';
-        info.appendChild(r1);
-      }
-      var payWrap = U.el('div');
-      payWrap.innerHTML = '<label style="font-size:13px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px;">支付方式</label>';
-      var sel = U.el('select', { class: 'select' });
-      PAY_METHODS.forEach(function (m) {
-        var v = m.split(' ')[0];
-        var o = U.el('option', { value: v }, m);
-        if (v === (cart.payMethod || 'CASH')) o.setAttribute('selected', 'selected');
-        sel.appendChild(o);
-      });
-      payWrap.appendChild(sel);
-      info.appendChild(payWrap);
-      wrap.appendChild(info);
+      /* ---------- 订单来源 ---------- */
+      var src = U.el('div', { class: 'card' });
+      src.innerHTML =
+        '<div class="card-title">订单来源</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<div>' +
+            '<div style="font-size:15px;font-weight:800;">' +
+              (isTA ? '📦 外卖订单' : ('堂食 · 桌 ' + (cart.table || '-') + ' 号')) +
+            '</div>' +
+            (isTA ? '' : '<div style="font-size:12px;color:var(--muted);margin-top:3px;">' + (cart.pax || 1) + ' 人</div>') +
+          '</div>' +
+          '<div style="text-align:right;">' +
+            '<div style="font-size:11px;color:var(--muted);font-weight:700;">单号</div>' +
+            '<div style="font-size:22px;font-weight:900;color:var(--primary);letter-spacing:1px;">' + U.escapeHTML(state.orderNo || '-') + '</div>' +
+          '</div>' +
+        '</div>';
+      wrap.appendChild(src);
 
-      // 账单
+      /* ---------- 商品清单 ---------- */
       var bill = U.el('div', { class: 'card' });
       bill.innerHTML = '<div class="card-title">消费明细 <span class="hint">' + cart.items.length + ' 项</span></div>';
       cart.items.forEach(function (it) {
@@ -5082,70 +6293,144 @@ svg{ display:block; }
         bill.appendChild(row);
       });
       var tr = U.el('div', { style: 'display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:8px;padding-top:12px;' });
-      tr.innerHTML = '<span style="font-size:14px;font-weight:700;color:var(--muted);">合计</span>' +
-        '<span style="font-size:30px;font-weight:900;color:var(--primary);">RM ' + U.formatMoneyPlain(total) + '</span>';
+      tr.innerHTML = '<span style="font-size:14px;font-weight:700;color:var(--muted);">应付金额</span>' +
+        '<span style="font-size:30px;font-weight:900;color:var(--primary);">RM ' + U.formatMoneyPlain(due) + '</span>';
       bill.appendChild(tr);
       wrap.appendChild(bill);
 
-      // 操作
+      /* ---------- 支付方式 ---------- */
+      var payCard = U.el('div', { class: 'card' });
+      payCard.innerHTML = '<div class="card-title">付款方式</div>';
+      var chips = U.el('div', { class: 'chip-wrap', id: 'pay-chips' });
+      PAY_METHODS.forEach(function (m) {
+        var v = m.split(' ')[0];
+        var on = v === (cart.payMethod || 'CASH');
+        var b = U.el('button', { class: 'chip' + (on ? ' on' : ''), 'data-pay': v }, m);
+        chips.appendChild(b);
+      });
+      payCard.appendChild(chips);
+      wrap.appendChild(payCard);
+
+      /* ---------- 收款区（计算器） ---------- */
+      var payBox = U.el('div', { class: 'card co-pay' });
+      payBox.innerHTML =
+        '<div class="card-title">收款 <span class="hint">只录实收，改不了应付</span></div>' +
+        '<div class="co-rows">' +
+          '<div class="co-row"><span class="k">应付</span><span class="v" id="co-due">RM ' + U.formatMoneyPlain(due) + '</span></div>' +
+          '<div class="co-row"><span class="k">实收</span><span class="v big" id="co-paid">RM 0.00</span></div>' +
+          '<div class="co-row change" id="co-change-row"><span class="k">找零</span><span class="v big" id="co-change">RM 0.00</span></div>' +
+        '</div>' +
+        '<div class="co-err" id="co-err" style="display:none;">收款不足，金额不能小于应付</div>' +
+        '<div class="co-quick" id="co-quick"></div>' +
+        '<div class="co-keypad" id="co-keypad"></div>';
+      wrap.appendChild(payBox);
+
+      /* ---------- 操作 ---------- */
       var ops = U.el('div', { class: 'card', style: 'display:flex;gap:10px;flex-wrap:wrap;' });
       var btnMore = U.el('button', { class: 'btn btn-ghost', style: 'flex:1 1 130px;' }, '返回加菜');
       var btnPay = U.el('button', { class: 'btn', style: 'flex:2 1 200px;' }, '确认结账并打印小票');
       ops.appendChild(btnMore);
       ops.appendChild(btnPay);
+      state.btnPay = btnPay;
       wrap.appendChild(ops);
 
       var tip = U.el('div', { style: 'font-size:12px;color:var(--muted);text-align:center;padding:6px 0 4px;' });
-      tip.textContent = isTA ? '结账后生成外卖单号 TAxxx' : '结账后生成堂食单号 DI xxx';
+      tip.textContent = '实收由键盘录入；应付由菜品自动计算，不可修改';
       wrap.appendChild(tip);
 
-      // 事件
+      /* ---------- 键盘 ---------- */
+      // 末行做成 0 与 . 各占两格，手指更容易点中
+      var KEYS = [
+        ['7', '8', '9', 'back'],
+        ['4', '5', '6', 'clear'],
+        ['1', '2', '3', '00'],
+        [['0', 2], ['.', 2]]
+      ];
+      var kp = payBox.querySelector('#co-keypad');
+      KEYS.forEach(function (row) {
+        row.forEach(function (cell) {
+          var key = Array.isArray(cell) ? cell[0] : cell;
+          var span = Array.isArray(cell) ? cell[1] : 1;
+          var label = key === 'back' ? '⌫' : (key === 'clear' ? 'C' : key);
+          var cls = 'co-key' + (key === 'back' || key === 'clear' ? ' fn' : '');
+          var b = U.el('button', { class: cls, 'data-key': key }, label);
+          if (span > 1) b.style.gridColumn = 'span ' + span;
+          kp.appendChild(b);
+        });
+      });
+
+      var quick = payBox.querySelector('#co-quick');
+      [['应付', due], ['+5', due + 5], ['+10', due + 10], ['50', 50], ['100', 100]].forEach(function (q) {
+        var b = U.el('button', { class: 'chip' }, q[0]);
+        b.addEventListener('click', function () {
+          var v = Math.max(q[1], due);
+          state.paidStr = String(money(v));
+          paintPay();
+        });
+        quick.appendChild(b);
+      });
+
+      /* ---------- 事件 ---------- */
       wrap.querySelector('#btn-back').addEventListener('click', function () { G.Router.go('#/tables'); });
       btnMore.addEventListener('click', function () { G.Router.go('#/order?slot=' + slotId); });
-      sel.addEventListener('change', function () {
-        cart.payMethod = sel.value;
+
+      chips.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-pay]');
+        if (!b) return;
+        cart.payMethod = b.getAttribute('data-pay');
+        U.qsa('[data-pay]', chips).forEach(function (x) { x.classList.toggle('on', x === b); });
         G.App.carts.save(cart);
+        paintPay();
       });
-      if (!isTA) {
-        var inT = wrap.querySelector('#in-table');
-        var inP = wrap.querySelector('#in-pax');
-        inT.addEventListener('change', function () {
-          var v = U.clamp(+inT.value || 1, 1, +G.App.cfg.get('tableCount') || 50);
-          // 换桌：把当前购物车迁移到新桌
-          if (v === cart.table) return;
-          U.confirm({ title: '转移到桌 ' + v + '？', message: '这张单的菜品将从桌 ' + cart.table + ' 转移到桌 ' + v + '。' }).then(function (ok) {
-            if (!ok) { inT.value = cart.table; return; }
-            var oldSlot = cart.slotId;
-            G.App.carts.clear(oldSlot).then(function () {
-              cart.slotId = G.App.carts.tableSlotId(v);
-              cart.table = v;
-              return G.App.carts.save(cart);
-            }).then(function () { G.Router.go('#/checkout?slot=' + cart.slotId); });
-          });
-        });
-        inP.addEventListener('change', function () {
-          cart.pax = U.clamp(+inP.value || 1, 1, 10);
-          inP.value = cart.pax;
-          G.App.carts.save(cart);
-        });
-      }
+
+      kp.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-key]');
+        if (!b) return;
+        pushKey(b.getAttribute('data-key'));
+      });
 
       btnPay.addEventListener('click', function () {
+        var dueNow = dueOf();
+        if (state.paidStr === '') { U.toast('请先输入实收金额', 'err'); return; }
+        if (paidOf() < dueNow - 0.0001) {
+          U.toast('收款不足，金额不能小于应付 RM ' + U.formatMoneyPlain(dueNow), 'err');
+          return;
+        }
+        btnPay.dataset.busy = '1';       // 结账中：别让 paintPay 把按钮重新启用
         btnPay.disabled = true; btnPay.textContent = '处理中…';
-        G.Flow.checkout(cart).then(function (order) {
+        G.Flow.checkout(cart, { paid: paidOf(), print: false }).then(function (order) {
           U.toast('结账完成 · ' + order.orderNo, 'ok');
-          // 打印（未开自动打印时，结账页总是出小票）
-          if (!G.App.cfg.get('autoPrint')) {
-            return G.Print.print(order).then(function () { return order; }, function () { return order; });
-          }
-          return order;
+          return G.Print.print(order).then(function () { return order; },
+                               function () { return order; });
         }).then(function (order) {
           showDone(order);
         }).catch(function (e) {
+          delete btnPay.dataset.busy;
           btnPay.disabled = false; btnPay.textContent = '确认结账并打印小票';
           U.toast('结账失败：' + e.message, 'err');
         });
       });
+
+      paintPay();
+    }
+
+    /* 实收 / 找零 / 错误态 / 按钮可用性 —— 只改文本，不重建键盘 */
+    function paintPay() {
+      var due = dueOf(), paid = paidOf(), chg = changeOf();
+      var elDue = wrap.querySelector('#co-due');
+      var elPaid = wrap.querySelector('#co-paid');
+      var elChg = wrap.querySelector('#co-change');
+      var elErr = wrap.querySelector('#co-err');
+      var rowChg = wrap.querySelector('#co-change-row');
+      if (elDue) elDue.textContent = 'RM ' + U.formatMoneyPlain(due);
+      if (elPaid) elPaid.textContent = 'RM ' + U.formatMoneyPlain(paid);
+      // 还没录实收时别显示负数找零（看着像少收钱）
+      if (elChg) elChg.textContent = 'RM ' + U.formatMoneyPlain(state.paidStr === '' ? 0 : chg);
+      // CASH 强制展示找零；电子钱包 / 转账也照样算，只是不作为必填项
+      if (rowChg) rowChg.classList.toggle('over', chg > 0.0001);
+      var bad = insufficient();
+      if (elErr) elErr.style.display = bad ? 'block' : 'none';
+      if (state.btnPay && !state.btnPay.dataset.busy) state.btnPay.disabled = bad;
     }
 
     function showDone(order) {
@@ -5160,8 +6445,19 @@ svg{ display:block; }
               '<div style="font-size:13px;color:var(--muted);margin-top:6px;">' +
                 (isTA ? '📦 外卖订单' : ('堂食 · 桌 ' + order.table + ' 号')) +
                 '  ·  ' + U.escapeHTML(order.payMethod) +
+                (order.operator ? '  ·  操作员 ' + U.escapeHTML(order.operator) : '') +
               '</div>' +
-              '<div style="font-size:30px;font-weight:900;margin-top:10px;">RM ' + U.formatMoneyPlain(order.total) + '</div>' +
+            '</div>' +
+            '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">' +
+              '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px;">' +
+                '<span style="color:var(--muted);font-weight:700;">应付</span>' +
+                '<span style="font-weight:800;">RM ' + U.formatMoneyPlain(order.due != null ? order.due : order.total) + '</span></div>' +
+              '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px;">' +
+                '<span style="color:var(--muted);font-weight:700;">实收</span>' +
+                '<span style="font-weight:800;">RM ' + U.formatMoneyPlain(order.paid != null ? order.paid : order.total) + '</span></div>' +
+              '<div style="display:flex;justify-content:space-between;padding:6px 0 2px;font-size:17px;">' +
+                '<span style="color:var(--muted);font-weight:800;">找零</span>' +
+                '<span style="font-weight:900;color:var(--primary);">RM ' + U.formatMoneyPlain(order.change != null ? order.change : 0) + '</span></div>' +
             '</div>' +
           '</div>' +
           '<div class="modal-foot">' +
@@ -5297,7 +6593,75 @@ svg{ display:block; }
     _clockTimer = setInterval(tickClock, 1000);
   }
 
+  /* ---------- 操作员身份（老板 / 员工） ----------
+     无密码的模式切换，身份存在 IndexedDB，刷新不丢。
+     切换后立即重绘当前页：菜单页 / 设置页要按新身份重新决定按钮是否置灰。 */
+  function paintOperator() {
+    var el = document.getElementById('btn-operator');
+    if (!el) return;
+    var role = G.App.operator.current() || '老板';
+    el.textContent = '操作员：' + role;
+    el.classList.toggle('staff', role === '员工');
+  }
+
+  function openOperatorPicker() {
+    var cur = G.App.operator.current() || '老板';
+    var html =
+      '<div class="modal-mask"><div class="modal" style="max-width:360px;">' +
+        '<div class="modal-head"><h3>切换操作员</h3>' +
+          '<button class="icon-btn" data-act="x" aria-label="关闭">' +
+            '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' +
+          '</button></div>' +
+        '<div class="modal-body">' +
+          '<div class="op-pick">' +
+            ['老板', '员工'].map(function (r) {
+              return '<label class="op-opt' + (r === cur ? ' on' : '') + '">' +
+                       '<input type="radio" name="oprole" value="' + r + '"' + (r === cur ? ' checked' : '') + '>' +
+                       '<span class="dot"></span>' +
+                       '<span class="txt">' + r + '</span>' +
+                       '<span class="desc">' + (r === '老板' ? '全部功能可用' : '禁止重置 / 导出 / 删档 / 改菜单') + '</span>' +
+                     '</label>';
+            }).join('') +
+          '</div>' +
+          '<p style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6;">' +
+            '只影响之后新生成的订单，历史订单仍保留原来的操作员。' +
+          '</p>' +
+        '</div>' +
+        '<div class="modal-foot">' +
+          '<button class="btn btn-gray" data-act="cancel">取消</button>' +
+          '<button class="btn" data-act="ok">确认切换</button>' +
+        '</div>' +
+      '</div></div>';
+    var m = U.openModal(html);
+    var picked = cur;
+    m.addEventListener('click', function (e) {
+      var lab = e.target.closest('.op-opt');
+      if (lab) {
+        picked = lab.querySelector('input').value;
+        U.qsa('.op-opt', m).forEach(function (x) { x.classList.toggle('on', x === lab); });
+        return;
+      }
+      if (e.target === m || e.target.closest('[data-act="x"]') || e.target.closest('[data-act="cancel"]')) {
+        U.closeAllModals(); return;
+      }
+      if (e.target.closest('[data-act="ok"]')) {
+        U.closeAllModals();
+        if (picked === cur) return;
+        G.App.operator.set(picked).then(function () {
+          paintOperator();
+          U.toast('已切换为：' + picked, 'ok');
+          // 重绘当前页，让被权限影响的按钮立即置灰 / 恢复
+          navTo(location.hash || '#/home');
+        });
+      }
+    });
+  }
+
   function bindGlobal() {
+    var opBtn = document.getElementById('btn-operator');
+    if (opBtn) opBtn.addEventListener('click', openOperatorPicker);
+    paintOperator();
+
     document.getElementById('btn-menu-toggle').addEventListener('click', function () {
       document.getElementById('sidenav').classList.add('open');
       document.getElementById('nav-backdrop').classList.add('show');
@@ -5345,8 +6709,11 @@ svg{ display:block; }
     bindGlobal();
     startClock();
 
-    // 种子数据
+    // 种子数据 + 分类迁移（老库升级后，无归属的菜品归入「未分类 / 默认子分类 / 默认分组」）
     G.App.seedIfEmpty().then(function () { /* ready */ });
+    G.App.cats.ensureDefaults().catch(function () { /* 迁移失败不阻断启动 */ });
+    // 身份是异步从 IndexedDB 读的，读回来再刷一次顶栏，避免首帧显示错的身份
+    G.App.operator.get().then(paintOperator).catch(function () {});
 
     // 首次打开：根据 hash 决定
     if (!location.hash) location.hash = '#/home';
