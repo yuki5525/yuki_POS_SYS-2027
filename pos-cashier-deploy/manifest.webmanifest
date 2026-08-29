@@ -1,0 +1,25 @@
+{
+  "name": "YH POS SYS",
+  "short_name": "YH POS",
+  "description": "YH POS SYS · 纯前端离线运行的点餐收银 PWA，支持台桌管理、小票打印、PDF 营业报告与数据备份。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FF7A00",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "food"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "台桌管理", "short_name": "台桌", "url": "./index.html#/tables" },
+    { "name": "点餐下单", "short_name": "点餐", "url": "./index.html#/order" },
+    { "name": "收银记录", "short_name": "收银", "url": "./index.html#/cashier" }
+  ]
+}
