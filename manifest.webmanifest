@@ -1,7 +1,7 @@
 {
-  "name": "YH POS SYS",
-  "short_name": "YH POS",
-  "description": "YH POS SYS · 纯前端离线运行的点餐收银 PWA，支持台桌管理、小票打印、PDF 营业报告与数据备份。",
+  "name": "YH YUMMY DELI FOOD JUNCTION",
+  "short_name": "YH YUMMY",
+  "description": "YH YUMMY DELI FOOD JUNCTION · 纯前端离线运行的点餐收银 PWA，支持台桌管理、小票打印、PDF 营业报告与数据备份。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

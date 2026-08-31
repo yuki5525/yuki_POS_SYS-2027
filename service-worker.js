@@ -2,7 +2,7 @@
    Service Worker · 离线缓存
    注意：每次发布新版本，务必 bump CACHE_NAME，否则用户端永远看到旧页面。
    ========================================================================== */
-var CACHE_NAME = 'pos-cashier-v8';   // v8：主食替换（后台配置 + 点餐弹窗 + 小票/PDF/历史订单）
+var CACHE_NAME = 'pos-cashier-v11';   // v11：营业模式切换 + 营业日报报表 + 一键清空业务数据
 
 var PRECACHE = [
   './',
