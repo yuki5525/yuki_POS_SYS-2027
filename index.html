@@ -245,7 +245,9 @@ svg{ display:block; }
   display:flex;align-items:center;justify-content:center;
   font-weight:800;font-size:19px;
   -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+  overflow:hidden;
 }
+.brand-logo img{ width:100%; height:100%; object-fit:cover; display:block; }
 .brand-text b{ display:block; font-size:15px; font-weight:800; }
 .brand-text small{ display:block; font-size:11px; opacity:.85; }
 .nav-list{ flex:1 1 auto; display:flex; flex-direction:column; gap:4px; }
@@ -1575,7 +1577,7 @@ button.op-opt:active{ transform:scale(.985); }
   <nav id="sidenav" aria-label="主导航">
     <div class="sidenav-head">
       <div class="brand">
-        <div class="brand-logo">点</div>
+        <div class="brand-logo"><img src="icons/avatar-512.png" alt="YH YUMMY"></div>
         <div class="brand-text">
           <b>YH YUMMY</b>
           <small>DELI FOOD JUNCTION · 离线收银</small>
@@ -2102,6 +2104,14 @@ button.op-opt:active{ transform:scale(.985); }
     shopPhone: '',                 // 电话
     shopReg: '',                   // REG NO. 注册号
     receiptFooter: '谢谢惠顾，欢迎再次光临',
+
+    /* SST（马来西亚销售与服务税）展示。**不计入收费**，只在小票合计下面/结账页
+       应付下方告知客人这单含多少税，便于对账。0 = 不显示。
+       - sstRate:     税率（%），默认 6
+       - sstInclusive: true = 价格已含税（tax = total ÷ (1+率) × 率）→ 客人已付清，不再加收
+                      false = 价外（tax = total × 率）→ 仅做信息提示 */
+    sstRate: 6,
+    sstInclusive: true,
 
     /* 营业模式（早餐 / 午餐 / 晚餐…）：bizTags 是模式名列表，bizHours 是各自的时段，
        bizMode 是当前选中（'auto' = 按 bizHours 自动判现在该哪一档）。
@@ -5300,6 +5310,34 @@ button.op-opt:active{ transform:scale(.985); }
     return name + ' ' + (dotN > 0 ? '.'.repeat(dotN) : '') + ' ' + right;
   }
 
+  /* SST（马来西亚销售与服务税）计算 + 小票行。ESC/POS 模板与 HTML 兜底模板共用。
+     **不计入收费** —— 只是在合计下面告知这单含多少税，total / due 一概不动。
+     - 价内含税（sstInclusive=true，默认）：价格里已经含了税，
+       tax = total ÷ (1 + 率) × 率 —— 客人付的就是这个价，不再加收。
+     - 价外（sstInclusive=false）：tax = total × 率，只做信息提示。
+     税率 0 或没配 → 返回 null，什么都不输出。 */
+  function computeSst(total, cfg) {
+    cfg = cfg || {};
+    var rate = +cfg.sstRate || 0;
+    if (!rate || !total) return null;
+    var pct = rate / 100;
+    var tax = cfg.sstInclusive ? (total / (1 + pct)) * pct : total * pct;
+    if (!isFinite(tax) || tax <= 0) return null;
+    return {
+      label: 'SST ' + rate + '%' + (cfg.sstInclusive ? '（已含）' : ''),
+      amount: Math.round(tax * 100) / 100
+    };
+  }
+
+  /* ESC/POS：在合计下面打一行 SST（居中、小号，不加粗，跟合计区分开） */
+  function pushSstRow(lines, total, cfg) {
+    var s = computeSst(total, cfg);
+    if (!s) return;
+    lines.push([].concat(ESCPOS.ALIGN_C,
+                         encodeForPrinter(s.label + '  RM ' + U.formatMoneyPlain(s.amount)),
+                         ESCPOS.LF));
+  }
+
   /* 小票抬头四件套：店铺名称 / 地址 / 电话 / REG NO.
      空值整行不输出 —— 没填的项目不留空白行。 */
   function shopLines(cfg) {
@@ -5356,7 +5394,7 @@ button.op-opt:active{ transform:scale(.985); }
   }
 
   /* 金额区（两套模板共用）：应付 / 实收 / 找零 / 合计，退过钱的多打两行明细 */
-  function pushMoney(lines, order, sep) {
+  function pushMoney(lines, order, sep, cfg) {
     var due = order.due != null ? order.due : order.total;
     var paid = order.paid != null ? order.paid : due;
     var chg = order.change != null ? order.change : Math.max(0, paid - due);
@@ -5390,6 +5428,8 @@ button.op-opt:active{ transform:scale(.985); }
                          encodeForPrinter('合计：RM ' + U.formatMoneyPlain(order.total)),
                          ESCPOS.LF,
                          ESCPOS.SIZE_1, ESCPOS.BOLD_OFF));
+    // SST 行：在合计下面，小号居中，纯告知、不加收
+    pushSstRow(lines, order.total, cfg);
   }
 
   /* 落款（两套模板共用）：操作员 + 底部备注 + 切纸 */
@@ -5439,7 +5479,7 @@ button.op-opt:active{ transform:scale(.985); }
     lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(sep), ESCPOS.LF));
 
     pushItems(lines, order, sep);
-    pushMoney(lines, order, sep);
+    pushMoney(lines, order, sep, cfg);
     pushFoot(lines, order, cfg);
     return joinBytes(lines);
   }
@@ -5481,7 +5521,7 @@ button.op-opt:active{ transform:scale(.985); }
     lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(sep), ESCPOS.LF));
 
     pushItems(lines, order, sep);
-    pushMoney(lines, order, sep);
+    pushMoney(lines, order, sep, cfg);
     pushFoot(lines, order, cfg);
     return joinBytes(lines);
   }
@@ -5532,6 +5572,7 @@ button.op-opt:active{ transform:scale(.985); }
       '  .rcpt .it-meta{ color:#555; font-size:10px; }' +
       '  .rcpt .it-amt{ text-align:right; white-space:nowrap; }' +
       '  .rcpt .total{ text-align:center; font-size:16px; font-weight:800; margin-top:6px; }' +
+      '  .rcpt .sst{ text-align:center; font-size:11px; color:#333; margin-top:3px; }' +
       '  .rcpt .foot{ text-align:center; margin-top:6px; font-size:11px; }' +
       /* 外卖：TA 单号块 */
       '  .rcpt .ta-title{ text-align:center; font-size:15px; font-weight:800; margin:6px 0 2px; }' +
@@ -5593,6 +5634,12 @@ button.op-opt:active{ transform:scale(.985); }
           : '') +
         '<div class="sep"></div>' +
         '<div class="total">合计：RM ' + U.formatMoneyPlain(order.total) + '</div>' +
+        // SST 行：合计下面，小字居中，纯告知、不加收
+        (function () {
+          var s = computeSst(order.total, cfg);
+          return s ? '<div class="sst">' + U.escapeHTML(s.label) +
+                     '  RM ' + U.formatMoneyPlain(s.amount) + '</div>' : '';
+        })() +
         '<div class="row"><span>操作员</span><span>' + U.escapeHTML(G.App.operator.labelOf(order)) + '</span></div>' +
         (cfg.receiptFooter ? '<div class="foot">' + U.escapeHTML(cfg.receiptFooter) + '</div>' : '') +
       '</div>';
@@ -5776,7 +5823,8 @@ button.op-opt:active{ transform:scale(.985); }
     buildDineInReceipt: buildDineInReceipt,
     buildTakeawayReceipt: buildTakeawayReceipt,
     receiptHTML: receiptHTML,     // 浏览器兜底用的 HTML，设置页预览两套模板也用它
-    shopLines: shopLines          // 纯函数，导出给冒烟测试直接验证抬头四件套
+    shopLines: shopLines,         // 纯函数，导出给冒烟测试直接验证抬头四件套
+    computeSst: computeSst        // 纯函数：算出这单含多少 SST（不计入收费，只做展示）
   };
 })(window);
 
@@ -7061,9 +7109,13 @@ button.op-opt:active{ transform:scale(.985); }
       wrap.innerHTML = '';
       // 标题
       var head = U.el('div', { class: 'page-title' }, [
-        U.el('div', null, [
-          U.el('h1', null, 'YH YUMMY'),
-          U.el('div', { class: 'sub' }, 'DELI FOOD JUNCTION · 今日：' + U.formatDateCN(new Date()))
+        U.el('div', { style: 'display:flex;align-items:center;gap:14px;' }, [
+          U.el('img', { src: 'icons/avatar-512.png', alt: 'YH YUMMY',
+            style: 'width:60px;height:60px;border-radius:16px;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,.12);flex:0 0 auto;' }),
+          U.el('div', null, [
+            U.el('h1', null, 'YH YUMMY'),
+            U.el('div', { class: 'sub' }, 'DELI FOOD JUNCTION · 今日：' + U.formatDateCN(new Date()))
+          ])
         ]),
         U.el('div', null, [
           U.el('button', { class: 'btn btn-soft', onclick: goTables }, [
@@ -10025,6 +10077,60 @@ button.op-opt:active{ transform:scale(.985); }
       c3.appendChild(f3);
       wrap.appendChild(c3);
 
+      /* SST（马来西亚销售与服务税）展示。**不计入收费**，只在小票合计下面 +
+         结账页应付下方提示客人这单含多少税，便于对账。
+         - 税率 0 就不显示这行（默认行为）
+         - 价内含税：客人付的就是这个价，按 total ÷ (1+率) × 率 反推税额（不另收）
+         - 价外：仅做信息提示，税额 = total × 率（客人也仍按 total 付） */
+      var cSst = U.el('div', { class: 'card' });
+      cSst.innerHTML = '<div class="card-title">SST 销售税展示 <span class="hint">不计入收费</span></div>';
+      var fS1 = U.el('div', { class: 'field' });
+      fS1.innerHTML = '<label>税率（%）<span class="hint">0 = 不显示</span></label>';
+      var inRate = U.el('input', { class: 'input', type: 'number', min: '0', max: '50', step: '0.5', value: c.sstRate || 0 });
+      inRate.addEventListener('change', function () {
+        var n = Math.max(0, Math.min(50, parseFloat(inRate.value) || 0));
+        G.App.cfg.set('sstRate', n);
+        inRate.value = n;
+        refresh();
+      });
+      fS1.appendChild(inRate);
+      cSst.appendChild(fS1);
+
+      var fS2 = U.el('div', { class: 'field' });
+      fS2.innerHTML = '<label>计税口径</label>';
+      var sSeg = U.el('div', { class: 'seg' });
+      [
+        ['true', '价内（含税）', '价格里已经含了税，客人付的就是这个价'],
+        ['false', '价外（仅提示）', '显示税额供参考，但客人也按 total 付']
+      ].forEach(function (p) {
+        var b = U.el('button', { class: (!!c.sstInclusive) === (p[0] === 'true') ? 'active' : '' },
+          p[1] + ' · ' + p[2]);
+        b.style.fontSize = '12px';
+        b.style.flex = '1 1 45%';
+        b.addEventListener('click', function () {
+          G.App.cfg.set('sstInclusive', p[0] === 'true');
+          refresh();
+        });
+        sSeg.appendChild(b);
+      });
+      fS2.appendChild(sSeg);
+      cSst.appendChild(fS2);
+
+      // 给老板一个眼见为实的换算：用 RM 100 样例，心算方便
+      var demoT = 100;
+      var rateNow = +c.sstRate || 0;
+      var demo = rateNow
+        ? (c.sstInclusive ? (demoT / (1 + rateNow / 100)) * (rateNow / 100) : demoT * (rateNow / 100))
+        : 0;
+      var fS3 = U.el('div', { class: 'hint', style: 'margin-top:6px;color:var(--muted);font-size:12px;' });
+      fS3.textContent = rateNow
+        ? '样例：合计 RM 100.00 → 显示「SST ' + rateNow + '%' + (c.sstInclusive ? '（已含）' : '') +
+          '  RM ' + demo.toFixed(2) + '」（仅展示，客人仍付 RM 100.00）'
+        : '当前税率 0，小票与结账页不显示 SST 行。';
+      cSst.appendChild(fS3);
+
+      wrap.appendChild(cSst);
+
       var c4 = U.el('div', { class: 'card' });
       c4.innerHTML = '<div class="card-title">下单后自动打印</div>';
       var sw = U.el('div', { class: 'switch' + (c.autoPrint ? ' on' : '') });
@@ -10901,6 +11007,19 @@ button.op-opt:active{ transform:scale(.985); }
       tr.innerHTML = '<span style="font-size:14px;font-weight:700;color:var(--muted);">应付金额</span>' +
         '<span style="font-size:30px;font-weight:900;color:var(--primary);">RM ' + U.formatMoneyPlain(due) + '</span>';
       bill.appendChild(tr);
+
+      /* SST 提示行：只告知这单含多少税，**不加到应付里**，客人付的还是上面那个数。
+         税率设为 0 就不显示这一行。 */
+      var sst = G.Print.computeSst(due, G.App.cfg.all());
+      if (sst) {
+        var sstRow = U.el('div', {
+          style: 'display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12.5px;color:var(--muted);'
+        });
+        sstRow.innerHTML = '<span>' + U.escapeHTML(sst.label) + '</span>' +
+          '<span>RM ' + U.formatMoneyPlain(sst.amount) + '</span>';
+        bill.appendChild(sstRow);
+      }
+
       wrap.appendChild(bill);
 
       /* ---------- 支付方式 ---------- */
@@ -11024,6 +11143,13 @@ button.op-opt:active{ transform:scale(.985); }
               '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px;">' +
                 '<span style="color:var(--muted);font-weight:700;">应付</span>' +
                 '<span style="font-weight:800;">RM ' + U.formatMoneyPlain(order.due != null ? order.due : order.total) + '</span></div>' +
+              (function () {
+                // SST 只是告知这单含多少税，不另收钱 —— 淡字小号跟上面的应付区分开
+                var s = G.Print.computeSst(order.due != null ? order.due : order.total, G.App.cfg.all());
+                return s ? '<div style="display:flex;justify-content:space-between;padding:1px 0 4px;font-size:12px;">' +
+                             '<span style="color:var(--muted);">' + U.escapeHTML(s.label) + '</span>' +
+                             '<span style="color:var(--muted);">RM ' + U.formatMoneyPlain(s.amount) + '</span></div>' : '';
+              })() +
               '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px;">' +
                 '<span style="color:var(--muted);font-weight:700;">实收</span>' +
                 '<span style="font-weight:800;">RM ' + U.formatMoneyPlain(order.paid != null ? order.paid : order.total) + '</span></div>' +

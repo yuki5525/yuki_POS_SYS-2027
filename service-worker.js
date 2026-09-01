@@ -2,7 +2,7 @@
    Service Worker · 离线缓存
    注意：每次发布新版本，务必 bump CACHE_NAME，否则用户端永远看到旧页面。
    ========================================================================== */
-var CACHE_NAME = 'pos-cashier-v11';   // v11：营业模式切换 + 营业日报报表 + 一键清空业务数据
+var CACHE_NAME = 'pos-cashier-v12';   // v12：SST 6% 展示（不计入收费）+ 侧栏/首页头像 + 新 PWA 图标
 
 var PRECACHE = [
   './',
@@ -12,7 +12,8 @@ var PRECACHE = [
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
-  './icons/icon.svg'
+  './icons/icon.svg',
+  './icons/avatar-512.png'         // 页面头像（侧栏/首页/设置页都用）
 ];
 
 self.addEventListener('install', function (e) {
