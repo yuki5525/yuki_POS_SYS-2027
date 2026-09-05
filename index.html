@@ -1736,6 +1736,44 @@ button.op-opt:active{ transform:scale(.985); }
     return [head].concat(rest);
   };
 
+  /* ---- 辣度 ----
+     跟主食的区别：等级表是**全局一份**（全店统一，在设置页改一次全店生效），
+     开关是**每道菜**的（饮料、甜品、白饭关掉）。单选、不加价。
+     和主食一样，订单里存的是下单当时的等级名快照 —— 以后改等级表不会改到已出的单据。
+
+     注意 00-util 是最先加载的模块，这里拿不到 G.App，所以 cfg 由调用方传进来。 */
+  U.spicyLevels = function (cfg) {
+    var list = (cfg && cfg.spicyLevels) || [];
+    var out = [];
+    (Array.isArray(list) ? list : []).forEach(function (s) {
+      var v = String(s == null ? '' : s).trim();
+      if (v && out.indexOf(v) < 0) out.push(v);   // 去空白、去重
+    });
+    return out;
+  };
+
+  /* 开关开着但等级表被清空了 → 等同没开，点餐弹窗整块不渲染 */
+  U.spicyEnabled = function (menu, cfg) {
+    if (!menu || !menu.enableSpicy) return false;
+    return U.spicyLevels(cfg).length > 0;
+  };
+
+  /* 这道菜默认预选哪一级：菜上配了默认辣度且还在等级表里就用它，否则退回第一级。
+     返回 null = 这道菜不问辣度，调用方据此整块不渲染。 */
+  U.spicyDefault = function (menu, cfg) {
+    if (!U.spicyEnabled(menu, cfg)) return null;
+    var lv = U.spicyLevels(cfg);
+    var want = String(menu.defaultSpicy || '').trim();
+    if (want && lv.indexOf(want) >= 0) return want;
+    return lv[0];
+  };
+
+  /* 快照文案：小票 / PDF / 购物车行统一用它，口径一致 */
+  U.spicyText = function (it) {
+    if (!it || !it.spicyName) return '';
+    return '【辣度：' + it.spicyName + '】';
+  };
+
   U.todayKey = function (d) {
     d = d || new Date();
     var y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
@@ -2113,6 +2151,11 @@ button.op-opt:active{ transform:scale(.985); }
     sstRate: 6,
     sstInclusive: true,
 
+    /* 辣度等级表（全局一份，设置页可增删改序）。
+       每道菜是否问辣度由 menu.enableSpicy 单独控制 —— 默认关，需要哪道开哪道。
+       已出的单据存的是等级名快照，改这张表不会改到历史小票。 */
+    spicyLevels: ['不辣', '微辣', '小辣', '中辣', '大辣', '特辣'],
+
     /* 营业模式（早餐 / 午餐 / 晚餐…）：bizTags 是模式名列表，bizHours 是各自的时段，
        bizMode 是当前选中（'auto' = 按 bizHours 自动判现在该哪一档）。
        具体规则与清洗逻辑都在 js/31-biz.js，这里只放空壳，由那边兜默认值。 */
@@ -2169,16 +2212,32 @@ button.op-opt:active{ transform:scale(.985); }
   }
   function delMenu(id) { return DB.del('menu', id); }
 
-  /* ---- 配料库（小料 / 可去配料） ---- */
+  /* ---- 配料库（小料 / 可去配料） ----
+     kind 只有两种：'extra' 加料/小料，'ingredient' 可去配料（点餐时表现为「不要 X」）。
+     两者在配料库、点餐弹窗里都是分开的两块，写错 kind 就会串栏。 */
+  var ADDON_KINDS = ['extra', 'ingredient'];
+
   function listAddons() { return DB.getAll('addons'); }
   function saveAddon(it) {
     if (!it.id) it.id = U.uid();
-    if (!['extra', 'ingredient'].indexOf(it.kind) + 1) it.kind = 'extra';
+    /* 注意：indexOf 结果是 -1 / 0 / 1，必须显式跟 0 比。
+       千万别写成 if (!ARR.indexOf(x) + 1) —— `!` 先作用于 indexOf 结果再 +1，恒为真。 */
+    if (ADDON_KINDS.indexOf(it.kind) < 0) it.kind = 'extra';   // 只在缺失/非法时兜底，已给的 kind 原样保留
     if (typeof it.price !== 'number') it.price = +it.price || 0;
     it.createdAt = it.createdAt || nowISO();
     return DB.put('addons', it);
   }
   function delAddon(id) { return DB.del('addons', id); }
+
+  /* 把某个配料在「加料 ↔ 可去配料」之间搬过去（修历史错档数据用） */
+  function flipAddonKind(id) {
+    return DB.get('addons', id).then(function (a) {
+      if (!a) return null;
+      a.kind = (a.kind === 'extra') ? 'ingredient' : 'extra';
+      if (a.kind === 'ingredient') a.price = 0;   // 可去配料不产生加价
+      return DB.put('addons', a);
+    });
+  }
 
   /* ================= 一 / 二 / 三 / 四级分类 =================
      层级强绑定：二级依附一级，三级依附二级，四级依附三级，菜品必须归属到四级分类。
@@ -3181,7 +3240,7 @@ button.op-opt:active{ transform:scale(.985); }
       DEFAULT_CAT: DEFAULT_CAT, DEFAULT_SUB: DEFAULT_SUB,
       DEFAULT_THIRD: DEFAULT_THIRD, DEFAULT_FOURTH: DEFAULT_FOURTH
     },
-    addons: { list: listAddons, save: saveAddon, del: delAddon },
+    addons: { list: listAddons, save: saveAddon, del: delAddon, flip: flipAddonKind, KINDS: ADDON_KINDS },
     orders: {
       list: listOrders, get: getOrder, save: saveOrder, del: delOrder, clearAll: clearAllOrders,
       refundedOf: refundedOf, netOf: netOf, isFullyRefunded: isFullyRefunded,
@@ -3289,6 +3348,8 @@ button.op-opt:active{ transform:scale(.985); }
           addons: l.addons || [], excludes: l.excludes || [],
           // 主食快照：存下单当时的名称与加价，后台改配置不影响历史订单
           stapleName: l.stapleName || '', staplePriceAdd: +l.staplePriceAdd || 0,
+          // 辣度快照：存等级名，以后在设置页增删等级不改到历史单据
+          spicyName: l.spicyName || '',
           photoId: l.photoId || '', subtotal: l.subtotal
         };
       }),
@@ -5382,6 +5443,7 @@ button.op-opt:active{ transform:scale(.985); }
       // 单价 + 数量
       var sub = '  ' + U.formatMoneyPlain(it.unitPrice) + ' x ' + it.qty;
       if (U.stapleText(it)) sub += '  ' + U.stapleText(it);
+      if (U.spicyText(it)) sub += '  ' + U.spicyText(it);
       if (it.addons && it.addons.length) {
         sub += '  +' + it.addons.map(function (a) { return a.name; }).join('/');
       }
@@ -5611,6 +5673,7 @@ button.op-opt:active{ transform:scale(.985); }
               '<tr><td colspan="3" class="it-meta">' +
                 U.formatMoneyPlain(it.unitPrice) + ' × ' + it.qty +
                 (U.stapleText(it) ? ' ' + U.escapeHTML(U.stapleText(it)) : '') +
+                (U.spicyText(it) ? ' ' + U.escapeHTML(U.spicyText(it)) : '') +
                 (it.addons && it.addons.length ? ' ＋' + it.addons.map(function (a) { return U.escapeHTML(a.name); }).join('/') : '') +
                 (it.excludes && it.excludes.length ? '  －' + it.excludes.map(function (e) { return U.escapeHTML(e.name); }).join('/') : '') +
               '</td></tr>';
@@ -6117,6 +6180,7 @@ button.op-opt:active{ transform:scale(.985); }
       ctx.fillStyle = '#6B7280';
       var sub = U.formatMoneyPlain(it.unitPrice) + ' × ' + it.qty;
       if (U.stapleText(it)) sub += '  ' + U.stapleText(it);
+      if (U.spicyText(it)) sub += '  ' + U.spicyText(it);
       if (it.addons && it.addons.length) sub += '  +' + it.addons.map(function (a) { return a.name; }).join('/');
       if (it.excludes && it.excludes.length) sub += '  -' + it.excludes.map(function (e) { return e.name; }).join('/');
       ctx.fillText(sub, listX, ly);
@@ -7564,6 +7628,7 @@ button.op-opt:active{ transform:scale(.985); }
         if (line.stapleName) {
           meta.push('主食:' + line.stapleName + (+line.staplePriceAdd > 0 ? ' +' + U.formatMoneyPlain(line.staplePriceAdd) : ''));
         }
+        if (line.spicyName) meta.push('辣度:' + line.spicyName);
         if (line.addons && line.addons.length) meta.push('+' + line.addons.map(function (a) { return a.name; }).join('/'));
         if (line.excludes && line.excludes.length) meta.push('-' + line.excludes.map(function (e) { return e.name; }).join('/'));
         row.innerHTML =
@@ -7847,6 +7912,11 @@ button.op-opt:active{ transform:scale(.985); }
       // 主食：没开启时 stapleOpts 为空数组，下面的板块整块不渲染
       var stapleOpts = U.stapleOptions(menu);
       var selStaple = stapleOpts[0] || null;
+      /* 辣度：等级表全局一份（设置页维护），开关在菜品上（menu.enableSpicy，默认关）。
+         这条菜没开 → spicyOpts 为空数组，下面整块不渲染。
+         存的是**等级名**而不是下标 —— 以后在设置页增删等级，已出的单据不会错位。 */
+      var spicyOpts = U.spicyEnabled(menu, G.App.cfg.all()) ? U.spicyLevels(G.App.cfg.all()) : [];
+      var selSpicy = U.spicyDefault(menu, G.App.cfg.all());
 
       /* 实时单价 = 菜品基础价（规格价）+ 主食替换加价 + 所有加料加价。
          主食、规格、加料三者任一变化都会重算，下面的 paintPrice 负责刷新显示。 */
@@ -7931,6 +8001,16 @@ button.op-opt:active{ transform:scale(.985); }
           paintPrice();
         });
       }
+      var spicyW = mask.querySelector('#spicy-wrap');
+      if (spicyW) {
+        spicyW.addEventListener('click', function (e) {
+          var b = e.target.closest('button[data-spicy]'); if (!b) return;
+          spicyW.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
+          b.classList.add('on');
+          // 辣度必选其一（等级表非空就一定有默认值），点错只会换一级，不会选空
+          selSpicy = b.getAttribute('data-spicy') || selSpicy;
+        });
+      }
       var addW = mask.querySelector('#add-wrap');
       addW.addEventListener('click', function (e) {
         var b = e.target.closest('button[data-addon]'); if (!b) return;
@@ -7961,15 +8041,16 @@ button.op-opt:active{ transform:scale(.985); }
       });
     }
 
-    function addToCart(menu, spec, addons, excludes, staple) {
+    function addToCart(menu, spec, addons, excludes, staple, spicy) {
       var c = state.cart;
       if (!c.items) c.items = [];
       // 主食只作用于当前这条，不回写菜单基础价
       var stapleName = staple ? (staple.name || '') : '';
       var stapleAdd = staple ? (+staple.priceAdd || 0) : 0;
-      /* 主食必须进 _key：否则同一道菜换个主食会被合并成同一条，
-         前一份选的主食就被后一份顶掉了。 */
-      var key = menu.id + '|' + spec.id + '|' + stapleName + '|' +
+      var spicyName = spicy ? String(spicy) : '';
+      /* 主食、辣度都必须进 _key：否则同一道菜换个主食/辣度会被合并成同一条，
+         前一份选的就被后一份顶掉了。 */
+      var key = menu.id + '|' + spec.id + '|' + stapleName + '|' + spicyName + '|' +
                 (addons || []).map(function (a) { return a.id; }).sort().join(',') + '|' +
                 (excludes || []).map(function (e) { return e.id; }).sort().join(',');
       var line = c.items.find(function (l) { return l._key === key; });
@@ -7980,6 +8061,8 @@ button.op-opt:active{ transform:scale(.985); }
           specId: spec.id, specName: spec.name, _basePrice: +spec.price || 0,
           // 存快照：后台以后改主食配置，不会影响购物车和已落的订单
           stapleName: stapleName, staplePriceAdd: stapleAdd,
+          // 辣度同理存等级名快照，且不加价（不参与 unitPrice 计算）
+          spicyName: spicyName,
           unitPrice: +spec.price || 0,
           addons: (addons || []).map(function (a) { return { id: a.id, name: a.name, price: a.price || 0 }; }),
           excludes: (excludes || []).map(function (e) { return { id: e.id, name: e.name }; }),
@@ -9323,6 +9406,21 @@ button.op-opt:active{ transform:scale(.985); }
                   '</div>' +
                 '</div>' +
               '</div>' +
+              /* ---- 辣度 ----
+                 等级表是全局的（在设置页维护），这里只管「这道菜问不问」和默认选哪级。 */
+              '<div class="field"><label>辣度</label>' +
+                '<div class="switch" id="m-spicy-on">' +
+                  '<div><div class="sw-label">提供辣度选择</div>' +
+                    '<div class="sw-desc">开启后，点这道菜时可单选辣度（等级表在「设置」里维护）</div></div>' +
+                  '<div class="sw-track"></div>' +
+                '</div>' +
+                '<div id="m-spicy-body" style="display:none;">' +
+                  '<div style="margin-top:8px;">' +
+                    '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">默认辣度（客人不换就用这个）</div>' +
+                    '<select class="select" id="m-spicy-default"></select>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
               '<div class="field"><label>菜品实拍照片（可选，用于 PDF 报告）</label>' +
                 '<div style="display:flex;gap:10px;align-items:center;">' +
                   '<div id="m-thumb" style="width:80px;height:80px;border-radius:12px;background:linear-gradient(135deg,#FFF1E0,#FFE2C6);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--primary);overflow:hidden;"></div>' +
@@ -9508,6 +9606,35 @@ button.op-opt:active{ transform:scale(.985); }
         });
         syncStapleOn();
 
+        /* ---- 辣度 ----
+           默认关：老菜品没有 enableSpicy → undefined → 关，现有点餐流程不受影响。
+           等级表被清空时开关作废，避免点餐弹窗冒出一个空的辣度行。 */
+        var spicyOn = m.querySelector('#m-spicy-on');
+        var spicyBody = m.querySelector('#m-spicy-body');
+        var spicySel = m.querySelector('#m-spicy-default');
+        var spicyLv = U.spicyLevels(G.App.cfg.all());
+        spicySel.innerHTML = spicyLv.length
+          ? spicyLv.map(function (lv) {
+              return '<option value="' + U.escapeHTML(lv) + '">' + U.escapeHTML(lv) + '</option>';
+            }).join('')
+          : '<option value="">（等级表为空，请先到「设置」添加）</option>';
+        spicySel.value = (menu.defaultSpicy && spicyLv.indexOf(menu.defaultSpicy) >= 0)
+          ? menu.defaultSpicy : (spicyLv[0] || '');
+        if (menu.enableSpicy && spicyLv.length) spicyOn.classList.add('on');
+        if (!spicyLv.length) {
+          spicyOn.style.opacity = '0.45';
+          spicyOn.title = '等级表为空，请先到「设置 → 辣度等级」添加';
+        }
+        function syncSpicyOn() {
+          spicyBody.style.display = spicyOn.classList.contains('on') ? '' : 'none';
+        }
+        spicyOn.addEventListener('click', function () {
+          if (!spicyLv.length) { U.toast('请先在「设置 → 辣度等级」里添加等级', 'err'); return; }
+          spicyOn.classList.toggle('on');
+          syncSpicyOn();
+        });
+        syncSpicyOn();
+
         /* 拖拽排序：算出鼠标落在哪一行中线之上，就插到那行前面 */
         stapleListDiv.addEventListener('dragover', function (e) {
           e.preventDefault();
@@ -9588,6 +9715,9 @@ button.op-opt:active{ transform:scale(.985); }
             enableStapleReplace: enableStaple,
             defaultStaple: defStaple,
             stapleList: stapleRows,
+            /* 辣度：开关关着也把默认等级存下来，重新打开不用再挑一次 */
+            enableSpicy: spicyOn.classList.contains('on'),
+            defaultSpicy: spicySel.value || '',
             categoryId: selCat.value,
             subCategoryId: selSub.value || '',
             thirdCategoryId: selThird.value || '',
@@ -9626,6 +9756,10 @@ button.op-opt:active{ transform:scale(.985); }
         var extras = rows.filter(function (r) { return r.kind === 'extra'; });
         var ings = rows.filter(function (r) { return r.kind === 'ingredient'; });
 
+        /* 历史数据兜底：早期版本有个 bug，把「可去配料」也写成了「加料」，
+           结果全堆在下面第一栏。这里把明显是「不要 X」的挑出来，一键搬回去 —— 不会自动改，必须你点。 */
+        if (editable) wrap.appendChild(misfiledBanner(extras, ings));
+
         var c1 = U.el('div', { class: 'card' });
         c1.innerHTML = '<div class="card-title">加料 / 小料 <span class="hint">' + extras.length + ' 项</span></div>';
         if (extras.length === 0) c1.appendChild(U.el('div', { class: 'empty' }, [U.el('p', null, '暂无加料')]));
@@ -9647,6 +9781,22 @@ button.op-opt:active{ transform:scale(.985); }
               (isExtra ? '<div class="s">' + (a.price > 0 ? '加 RM ' + U.formatMoneyPlain(a.price) : '免费') + '</div>' : '') +
             '</div>';
           if (editable) {
+            /* 归类搬错了就点这个：加料 ⇄ 可去配料 */
+            var mv = U.el('button', {
+              class: 'icon-btn', title: isExtra ? '移到「可去配料」' : '移到「加料 / 小料」',
+              html: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 10h11l-3-3M17 14H6l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>'
+            });
+            mv.addEventListener('click', function () {
+              U.confirm({
+                title: '移到「' + (isExtra ? '可去配料' : '加料 / 小料') + '」？',
+                message: '「' + a.name + '」' + (isExtra ? '\n移过去后不再有加价，点餐时显示为「不要 ' + a.name + '」。' : '')
+              }).then(function (ok) {
+                if (!ok) return;
+                G.App.addons.flip(a.id).then(refresh);
+              });
+            });
+            r.appendChild(mv);
+
             var de = U.el('button', { class: 'icon-btn', html: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' });
             de.addEventListener('click', function () {
               U.confirm({ title: '删除？', message: '「' + a.name + '」', danger: true }).then(function (ok) {
@@ -9657,6 +9807,34 @@ button.op-opt:active{ transform:scale(.985); }
             r.appendChild(de);
           }
           return r;
+        }
+
+        /* 只提示、不自动改：名字以「不 / 无 / 去 / 免 / 少」开头、又没有加价的，
+           基本都是被旧 bug 错放到「加料」栏的可去配料。 */
+        function misfiledBanner(extras, ings) {
+          var bad = extras.filter(function (a) {
+            return /^(不|无|去|免|少)/.test(String(a.name || '')) && !(+a.price > 0);
+          });
+          var box = U.el('div', { class: 'card' });
+          if (bad.length === 0) return box;
+          box.style.border = '1px solid var(--warn, #E8A33D)';
+          box.innerHTML =
+            '<div class="card-title">⚠️ 有 ' + bad.length + ' 项可能放错栏了</div>' +
+            '<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:8px;">' +
+              '这些名字像「不要 X」又没加价，但当前被归在「加料 / 小料」里：' +
+              '<b style="color:var(--text);">' + bad.map(function (a) { return U.escapeHTML(a.name); }).join('、') + '</b>' +
+            '</div>';
+          var go = U.el('button', { class: 'btn' }, '一键移到「可去配料」');
+          go.addEventListener('click', function () {
+            Promise.all(bad.map(function (a) { return G.App.addons.flip(a.id); }))
+              .then(function () { U.toast('已移动 ' + bad.length + ' 项', 'ok'); refresh(); });
+          });
+          var no = U.el('button', { class: 'btn btn-ghost' }, '就这样，别动');
+          no.addEventListener('click', function () { box.remove(); });
+          var row = U.el('div', { style: 'display:flex;gap:8px;' });
+          row.appendChild(go); row.appendChild(no);
+          box.appendChild(row);
+          return box;
         }
 
         function addOne(kind) {
@@ -10046,7 +10224,7 @@ button.op-opt:active{ transform:scale(.985); }
           createTime: new Date().toISOString(),
           items: [
             { name: '炒粿条', specName: '大份', unitPrice: 8.5, qty: 2, subtotal: 17,
-              addons: [{ name: '加蛋' }], excludes: [], stapleName: '粿条', staplePriceAdd: 0 },
+              addons: [{ name: '加蛋' }], excludes: [], stapleName: '粿条', staplePriceAdd: 0, spicyName: '中辣' },
             { name: '拉茶', specName: '标准', unitPrice: 3.2, qty: 2, subtotal: 6.4,
               addons: [], excludes: [] }
           ],
@@ -10130,6 +10308,65 @@ button.op-opt:active{ transform:scale(.985); }
       cSst.appendChild(fS3);
 
       wrap.appendChild(cSst);
+
+      /* 辣度等级表（全局一份）
+         菜品侧只管「问不问辣度」和默认选哪级，等级本身在这里统一维护 ——
+         改一次全店生效。已出的单据存的是等级名快照，改这张表不会改到历史小票；
+         某道菜的默认辣度被删掉时，点餐弹窗自动退回第一级，不会报错。 */
+      var cSpicy = U.el('div', { class: 'card' });
+      cSpicy.innerHTML = '<div class="card-title">辣度等级 <span class="hint">全局一份，在菜品里单独开关</span></div>';
+      var spBox = U.el('div');
+
+      function commitSpicy() {
+        var arr = [];
+        spBox.querySelectorAll('.spicy-row').forEach(function (r) {
+          var v = r.querySelector('input').value.trim();
+          if (v && arr.indexOf(v) < 0) arr.push(v);   // 去空白、去重
+        });
+        G.App.cfg.set('spicyLevels', arr);
+        refresh();
+      }
+
+      function addSpicyRow(v) {
+        var r = U.el('div', { class: 'spicy-row', style: 'display:flex;gap:6px;align-items:center;margin-bottom:6px;' });
+        r.innerHTML = '<input class="input" placeholder="等级名（如：中辣）" value="' + U.escapeHTML(v || '') + '">';
+        var up = U.el('button', { class: 'icon-btn', html: '▲', title: '上移' });
+        var dn = U.el('button', { class: 'icon-btn', html: '▼', title: '下移' });
+        var rm = U.el('button', {
+          class: 'icon-btn', title: '删除',
+          html: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>'
+        });
+        // 用 change 而不是 input：边打字边整页重绘会把光标弄丢
+        r.querySelector('input').addEventListener('change', commitSpicy);
+        up.addEventListener('click', function () {
+          var p = r.previousElementSibling; if (!p) return;
+          spBox.insertBefore(r, p); commitSpicy();
+        });
+        dn.addEventListener('click', function () {
+          var n = r.nextElementSibling; if (!n) return;
+          spBox.insertBefore(n, r); commitSpicy();
+        });
+        rm.addEventListener('click', function () { spBox.removeChild(r); commitSpicy(); });
+        r.appendChild(up); r.appendChild(dn); r.appendChild(rm);
+        spBox.appendChild(r);
+        return r;
+      }
+      U.spicyLevels(c).forEach(addSpicyRow);
+      cSpicy.appendChild(spBox);
+
+      var btnAddSp = U.el('button', { class: 'btn btn-soft btn-sm' }, '+ 添加辣度等级');
+      btnAddSp.addEventListener('click', function () {
+        addSpicyRow('');
+        var rows = spBox.querySelectorAll('.spicy-row');
+        if (rows.length) rows[rows.length - 1].querySelector('input').focus();
+      });
+      cSpicy.appendChild(btnAddSp);
+      cSpicy.appendChild(U.el('div', { class: 'hint', style: 'margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6;' },
+        U.spicyLevels(c).length
+          ? '这里的顺序就是点餐时的排列顺序。改这张表不会改到已出的单据（单子上存的是当时的等级名）；某道菜的默认辣度若被删掉，点餐时自动退回第一级。'
+          : '还没有任何等级。先添加等级，才能在菜品编辑里打开「提供辣度选择」。'));
+
+      wrap.appendChild(cSpicy);
 
       var c4 = U.el('div', { class: 'card' });
       c4.innerHTML = '<div class="card-title">下单后自动打印</div>';
