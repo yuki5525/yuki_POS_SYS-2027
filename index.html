@@ -706,6 +706,31 @@ svg{ display:block; }
 .ck-total-row .lbl{ font-size:13px; color:var(--muted); font-weight:700; }
 .ck-total-row .val{ font-size:26px; font-weight:900; color:var(--primary); font-variant-numeric:tabular-nums; letter-spacing:.5px; }
 
+/* 手机端购物车抽屉：折叠时只显示「把手 + 结算」；展开后上滑显示整张购物车。
+   桌面端 .ck-sheet-body 始终展开、把手隐藏，布局与旧版一致。 */
+.ck-sheet-body{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+.ck-handle{ display:none; }
+
+@media (max-width:819px){
+  .ck-handle{
+    display:flex; align-items:center; gap:8px;
+    width:100%; min-height:46px; margin:0 0 6px;
+    background:var(--primary); color:#fff; border:none; border-radius:14px;
+    font-size:15px; font-weight:800; padding:0 14px;
+  }
+  .ck-handle:active{ filter:brightness(.95); }
+  .ck-handle .ck-h-ico{ font-size:17px; }
+  .ck-handle .ck-h-txt{ flex:1 1 auto; text-align:left; }
+  .ck-h-arrow{ transition:transform .2s; }
+  .order-checkout.open .ck-h-arrow{ transform:rotate(180deg); }
+  /* 折叠：隐藏整张购物车，只留把手 + 底部结算；展开：上滑显示 */
+  .ck-sheet-body{ display:none; }
+  .order-checkout.open{ flex:0 0 auto; max-height:88vh; }
+  .order-checkout.open .ck-sheet-body{
+    display:flex; overflow-y:auto; -webkit-overflow-scrolling:touch; max-height:60vh;
+  }
+}
+
 /* ==========================================================================
    台桌管理
    ========================================================================== */
@@ -3366,6 +3391,7 @@ button.op-opt:active{ transform:scale(.985); }
       // 营业模式快照：存下单当时是早餐还是晚餐，不存引用。
       // 老板以后把「早餐」改名或删掉，这张单上的 history 仍然对得上。
       businessMode: (G.App.biz && G.App.biz.mode) ? G.App.biz.mode() : '',
+      note: cart.note || '',
       settled: true
     };
   }
@@ -5541,6 +5567,12 @@ button.op-opt:active{ transform:scale(.985); }
     lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(sep), ESCPOS.LF));
 
     pushItems(lines, order, sep);
+    if (order.note) {
+      lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter('【备注】'), ESCPOS.LF));
+      lines.push([].concat(ESCPOS.ALIGN_L, ESCPOS.BOLD_ON, ESCPOS.SIZE_2,
+                           encodeForPrinter(order.note), ESCPOS.LF,
+                           ESCPOS.SIZE_1, ESCPOS.BOLD_OFF));
+    }
     pushMoney(lines, order, sep, cfg);
     pushFoot(lines, order, cfg);
     return joinBytes(lines);
@@ -5583,6 +5615,12 @@ button.op-opt:active{ transform:scale(.985); }
     lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter(sep), ESCPOS.LF));
 
     pushItems(lines, order, sep);
+    if (order.note) {
+      lines.push([].concat(ESCPOS.ALIGN_L, encodeForPrinter('【备注】'), ESCPOS.LF));
+      lines.push([].concat(ESCPOS.ALIGN_L, ESCPOS.BOLD_ON, ESCPOS.SIZE_2,
+                           encodeForPrinter(order.note), ESCPOS.LF,
+                           ESCPOS.SIZE_1, ESCPOS.BOLD_OFF));
+    }
     pushMoney(lines, order, sep, cfg);
     pushFoot(lines, order, cfg);
     return joinBytes(lines);
@@ -5628,6 +5666,7 @@ button.op-opt:active{ transform:scale(.985); }
       '  .rcpt .sep{ border-top:1px dashed #000; margin:4px 0; }' +
       '  .rcpt .sep2{ border-top:2px solid #000; margin:5px 0; }' +
       '  .rcpt .row{ display:flex; justify-content:space-between; font-size:11px; }' +
+      '  .rcpt .note{ font-weight:800; font-size:12.5px; color:#000; }' +
       '  .rcpt table{ width:100%; border-collapse:collapse; font-size:11px; }' +
       '  .rcpt td{ padding:1px 0; vertical-align:top; }' +
       '  .rcpt .it-name{ font-weight:600; }' +
@@ -5662,6 +5701,7 @@ button.op-opt:active{ transform:scale(.985); }
 
         '<div class="row"><span>支付</span><span>' + U.escapeHTML(order.payMethod) + '</span></div>' +
         (order.businessMode ? '<div class="row"><span>时段</span><span>' + U.escapeHTML(order.businessMode) + '</span></div>' : '') +
+        (order.note ? '<div class="row"><span>备注</span><span class="note" style="text-align:right;max-width:72%;">' + U.escapeHTML(order.note) + '</span></div>' : '') +
         '<div class="sep"></div>' +
         '<table>' +
           (order.items || []).map(function (it) {
@@ -7342,6 +7382,7 @@ button.op-opt:active{ transform:scale(.985); }
           '<span id="mode-text">堂食 · 桌 1</span>' +
           '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
         '</button>' +
+        '<button class="btn btn-sm" style="min-height:38px;background:rgba(255,255,255,.22);color:#fff;font-weight:800;" id="btn-switch-table">换桌</button>' +
         '<button class="btn btn-sm" style="min-height:38px;background:#fff;color:#FF7A00;" id="btn-clear-cart">清空</button>' +
       '</div>' +
       '<div id="ord-subtitle" style="font-size:11.5px;opacity:.92;margin-top:6px;text-align:center;"></div>';
@@ -7404,10 +7445,11 @@ button.op-opt:active{ transform:scale(.985); }
       var n = +G.App.cfg.get('tableCount') || 50;
       var html =
         '<div class="modal-mask"><div class="modal" style="max-width:520px;">' +
-          '<div class="modal-head"><h3>切换工位</h3><button class="icon-btn" data-act="x" aria-label="关闭">' +
+          '<div class="modal-head"><h3>换桌 / 切换工位</h3><button class="icon-btn" data-act="x" aria-label="关闭">' +
             '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>' +
           '</button></div>' +
           '<div class="modal-body">' +
+            '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5;">选好后会把当前已点的菜一起搬过去；目标桌已有订单会先问你要不要合并。</div>' +
             '<div class="field"><label>外带工位</label>' +
               '<button class="btn ' + (state.cart && state.cart.kind === 'takeaway' ? '' : 'btn-ghost') + '" data-slot="TAKEAWAY" style="width:100%;">📦 外带订单（无固定桌号）</button>' +
             '</div>' +
@@ -7428,7 +7470,7 @@ button.op-opt:active{ transform:scale(.985); }
         if (b) {
           var sid = b.getAttribute('data-slot');
           U.closeAllModals();
-          if (sid !== state.slotId) switchSlot(sid);
+          gotoSlot(sid);
           return;
         }
         if (e.target.closest('[data-act="x"]')) U.closeAllModals();
@@ -7451,17 +7493,80 @@ button.op-opt:active{ transform:scale(.985); }
       U.toast('已切换到 ' + (sid === 'TAKEAWAY' ? '外带' : '桌 ' + +sid.slice(1)), 'ok');
     }
 
+    /* 同步地址栏里的 slot= 参数（不触发整页重建，避免已选分类 / 搜索词丢失） */
+    function syncHashSlot(sid) {
+      var next = location.hash.indexOf('slot=') >= 0
+        ? location.hash.replace(/slot=[^&]*/, 'slot=' + sid)
+        : location.hash + (location.hash.indexOf('?') >= 0 ? '&' : '?') + 'slot=' + sid;
+      try { history.replaceState(null, '', next); } catch (e) { location.hash = next; }
+    }
+
+    /* 去某个工位：当前这单有菜就「搬过去」（换桌），没菜就只是切换视图 */
+    function gotoSlot(sid) {
+      if (sid === state.slotId) { U.toast('已经是这个工位'); return; }
+      var hasItems = state.cart && (state.cart.items || []).length > 0;
+      if (hasItems) moveCart(state.slotId, sid);
+      else switchSlot(sid);
+    }
+
+    /* 换桌：把当前工位整单（菜品 / 人数 / 支付方式 / 单号）搬到目标工位。
+       目标工位已有订单或已结账 → 弹确认合并；合并 = 当前单追加到目标单后面。
+       搬完清掉源工位（含解锁），再切到目标工位重新占位。 */
+    function moveCart(fromSid, toSid) {
+      if (stopHold) { stopHold(); stopHold = null; }
+      var from = state.cart;
+      return G.App.carts.get(toSid).then(function (to) {
+        var targetBusy = ((to.items || []).length > 0) || to.status === 'paid';
+        var doMove = function () {
+          var isTA = toSid === 'TAKEAWAY';
+          var merged = {
+            slotId: toSid,
+            kind: isTA ? 'takeaway' : 'dinein',
+            table: isTA ? 0 : (+toSid.slice(1)),
+            pax: from.pax,
+            payMethod: from.payMethod,
+            orderNo: from.orderNo,
+            note: from.note,
+            items: (from.items || []).slice().concat((to.items || []).slice())
+          };
+          return G.App.carts.save(merged)
+            .then(function () { return G.App.carts.clear(fromSid); })
+            .then(function () {
+              state.slotId = toSid;
+              syncHashSlot(toSid);
+              return loadCart();
+            });
+        };
+        if (targetBusy) {
+          return U.confirm({
+            title: '目标工位已有订单',
+            message: '「' + (to.kind === 'takeaway' ? '外带' : ('桌 ' + to.table + ' 号')) +
+              '」已有 ' + ((to.items || []).length) + ' 项。把当前这单（' + ((from.items || []).length) +
+              ' 项）合并过去吗？',
+            okText: '合并过去', danger: true, cancelText: '先不换'
+          }).then(function (ok) { return ok ? doMove() : Promise.resolve(); });
+        }
+        return doMove();
+      });
+    }
+
     /* ---------------- 结算面板 ---------------- */
     function buildCheckout() {
       if (!state.cart) return;
       var c = state.cart;
       checkout.innerHTML = '';
 
+      /* 手机端购物车抽屉：把手 + 可折叠的整张购物车（.ck-sheet-body）+ 底部结算。
+         桌面端 .ck-sheet-body 始终展开、把手隐藏，布局与旧版一致。 */
+      var handle = U.el('button', { class: 'ck-handle', id: 'ck-handle' });
+      checkout.appendChild(handle);
+      var sheet = U.el('div', { class: 'ck-sheet-body' });
+
       var row = U.el('div', { class: 'ck-head' });
       if (c.kind === 'takeaway') {
         // 外带：人数固定 0，只保留支付方式 + 备注位
         var taNote = U.el('div', { style: 'font-size:12px;color:var(--muted);font-weight:600;padding:4px 2px;' }, '📦 外带订单 · 不计桌号与人数');
-        checkout.appendChild(taNote);
+        sheet.appendChild(taNote);
       } else {
         row.innerHTML =
           '<div class="num-wrap">' +
@@ -7480,7 +7585,7 @@ button.op-opt:active{ transform:scale(.985); }
               '<button class="step" data-act="inc-p">+</button>' +
             '</div>' +
           '</div>';
-        checkout.appendChild(row);
+        sheet.appendChild(row);
       }
 
       var payWrap = U.el('div', { style: 'margin-top:8px;flex:0 0 auto;' });
@@ -7492,10 +7597,20 @@ button.op-opt:active{ transform:scale(.985); }
         sel.appendChild(o);
       });
       payWrap.appendChild(sel);
-      checkout.appendChild(payWrap);
+      sheet.appendChild(payWrap);
 
       var cartBox = U.el('div', { class: 'ck-cart', id: 'ck-cart' });
-      checkout.appendChild(cartBox);
+      sheet.appendChild(cartBox);
+
+      /* 订单备注：可手写的整单备注（如「不要香菜」「少冰」），随购物车落库、出小票 */
+      var noteWrap = U.el('div', { style: 'margin-top:8px;flex:0 0 auto;' });
+      noteWrap.innerHTML =
+        '<label style="font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">订单备注</label>' +
+        '<textarea class="textarea" id="in-note" rows="2" placeholder="如：不要香菜、少冰、整桌微辣…" style="width:100%;font-size:13px;"></textarea>';
+      sheet.appendChild(noteWrap);
+      var noteEl = noteWrap.querySelector('#in-note');
+      noteEl.value = c.note || '';
+      noteEl.addEventListener('input', function () { c.note = noteEl.value; persist(); });
 
       var foot = U.el('div', { class: 'ck-foot' });
       var totalRow = U.el('div', { class: 'ck-total-row' });
@@ -7511,6 +7626,7 @@ button.op-opt:active{ transform:scale(.985); }
       tip.textContent = '挂单＝先存起来稍后付款（不计营业额）；下单收银＝立即收款出小票';
       foot.appendChild(tip);
       checkout.appendChild(foot);
+      handle.addEventListener('click', toggleCartDrawer);
 
       // 事件
       if (c.kind !== 'takeaway') {
@@ -7518,16 +7634,16 @@ button.op-opt:active{ transform:scale(.985); }
         row.querySelector('[data-act="dec-t"]').addEventListener('click', function () {
           c.table = U.clamp((c.table || 1) - 1, 1, maxT);
           // 换桌 = 换 slot
-          switchSlot(G.App.carts.tableSlotId(c.table));
+          gotoSlot(G.App.carts.tableSlotId(c.table));
         });
         row.querySelector('[data-act="inc-t"]').addEventListener('click', function () {
           c.table = U.clamp((c.table || 1) + 1, 1, maxT);
-          switchSlot(G.App.carts.tableSlotId(c.table));
+          gotoSlot(G.App.carts.tableSlotId(c.table));
         });
         var inT = row.querySelector('#in-table');
         inT.addEventListener('change', function () {
           c.table = U.clamp(+inT.value || 1, 1, maxT);
-          switchSlot(G.App.carts.tableSlotId(c.table));
+          gotoSlot(G.App.carts.tableSlotId(c.table));
         });
         row.querySelector('[data-act="dec-p"]').addEventListener('click', function () { c.pax = U.clamp((c.pax || 1) - 1, 1, 10); row.querySelector('#in-pax').value = c.pax; persist(); });
         row.querySelector('[data-act="inc-p"]').addEventListener('click', function () { c.pax = U.clamp((c.pax || 1) + 1, 1, 10); row.querySelector('#in-pax').value = c.pax; persist(); });
@@ -7669,6 +7785,24 @@ button.op-opt:active{ transform:scale(.985); }
       if (el) el.textContent = 'RM ' + U.formatMoneyPlain(total);
       paintMode();
       renderCart();
+      paintHandle();
+    }
+
+    /* 抽屉把手文案：始终显示已点数量 + 合计，折叠时也能一眼看到本单情况 */
+    function paintHandle() {
+      var h = checkout.querySelector('#ck-handle');
+      if (!h || !state.cart) return;
+      var n = (state.cart.items || []).length;
+      var total = cartTotal();
+      h.innerHTML =
+        '<span class="ck-h-ico">🛒</span>' +
+        '<span class="ck-h-txt">' + (n ? ('已点 ' + n + ' 样 · RM ' + U.formatMoneyPlain(total)) : '购物车为空') + '</span>' +
+        '<svg class="ck-h-arrow" viewBox="0 0 24 24" width="18" height="18"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+
+    /* 手机端：点把手展开 / 收起购物车抽屉 */
+    function toggleCartDrawer() {
+      checkout.classList.toggle('open');
     }
 
     /* ---------------- 菜单 ---------------- */
@@ -7912,11 +8046,14 @@ button.op-opt:active{ transform:scale(.985); }
       // 主食：没开启时 stapleOpts 为空数组，下面的板块整块不渲染
       var stapleOpts = U.stapleOptions(menu);
       var selStaple = stapleOpts[0] || null;
-      /* 辣度：等级表全局一份（设置页维护），开关在菜品上（menu.enableSpicy，默认关）。
-         这条菜没开 → spicyOpts 为空数组，下面整块不渲染。
-         存的是**等级名**而不是下标 —— 以后在设置页增删等级，已出的单据不会错位。 */
-      var spicyOpts = U.spicyEnabled(menu, G.App.cfg.all()) ? U.spicyLevels(G.App.cfg.all()) : [];
-      var selSpicy = U.spicyDefault(menu, G.App.cfg.all());
+      /* 辣度：等级表全局一份（设置页维护）。
+         v14 起：只要店里设置了辣度等级表，每道菜在点餐时都能直接选辣度，
+         不再需要去菜单编辑里逐个开 enableSpicy（以前只能在那儿设，点餐选不了）。
+         菜单上的 defaultSpicy 仍作默认预选；存的是等级名，改等级表不影响已出单据。 */
+      var spicyOpts = U.spicyLevels(G.App.cfg.all());
+      /* 全部默认「无辣」（等级表第一项，通常是「不辣」）：弹窗打开就预选第一级，
+         需要时再手动点更高的辣度。菜单上的 defaultSpicy 不再预选，统一从无辣起。 */
+      var selSpicy = spicyOpts.length ? spicyOpts[0] : null;
 
       /* 实时单价 = 菜品基础价（规格价）+ 主食替换加价 + 所有加料加价。
          主食、规格、加料三者任一变化都会重算，下面的 paintPrice 负责刷新显示。 */
@@ -7951,6 +8088,16 @@ button.op-opt:active{ transform:scale(.985); }
           '</div></div>'
         : '';
 
+      /* 辣度选择块：全局等级表非空就渲染（位置在「主食」之下）。
+         按钮 data-spicy 带等级名，点击处理在弹窗建好之后绑定。 */
+      var spicyBlock = spicyOpts.length
+        ? '<div class="field"><label>选择辣度</label><div class="chip-wrap" id="spicy-wrap">' +
+            spicyOpts.map(function (lv) {
+              return '<button class="chip' + (lv === selSpicy ? ' on' : '') + '" data-spicy="' + U.escapeHTML(lv) + '">' + U.escapeHTML(lv) + '</button>';
+            }).join('') +
+          '</div></div>'
+        : '';
+
       var html =
         '<div class="modal-mask"><div class="modal" style="max-width:520px;">' +
           '<div class="modal-head"><h3>' + U.escapeHTML(menu.name) + '</h3><button class="icon-btn" data-act="x" aria-label="关闭">' +
@@ -7963,7 +8110,7 @@ button.op-opt:active{ transform:scale(.985); }
                 return '<button class="chip' + (i === 0 ? ' on' : '') + '" data-spec="' + s.id + '">' + U.escapeHTML(s.name) + '  RM ' + U.formatMoneyPlain(s.price) + '</button>';
               }).join('') +
             '</div></div>' +
-            stapleBlock +
+            stapleBlock + spicyBlock +
             '<div class="field"><label>小料 / 加料</label><div class="chip-wrap" id="add-wrap">' +
               (extras.length ? extras.map(function (a) {
                 return '<button class="chip" data-addon="' + a.id + '">' + U.escapeHTML(a.name) + (a.price > 0 ? '  +RM ' + U.formatMoneyPlain(a.price) : '  免费') + '</button>';
@@ -8036,7 +8183,7 @@ button.op-opt:active{ transform:scale(.985); }
       });
       mask.querySelector('[data-act="ok"]').addEventListener('click', function () {
         if (!selSpec) { U.toast('请先选择规格', 'err'); return; }
-        addToCart(menu, selSpec, selAddons, selExcludes, selStaple);
+        addToCart(menu, selSpec, selAddons, selExcludes, selStaple, selSpicy);
         U.closeAllModals();
       });
     }
@@ -8079,6 +8226,7 @@ button.op-opt:active{ transform:scale(.985); }
 
     /* ---------------- 绑定 ---------------- */
     head.querySelector('#btn-mode').addEventListener('click', openModePicker);
+    head.querySelector('#btn-switch-table').addEventListener('click', openModePicker);
     head.querySelector('#btn-back-tables').addEventListener('click', function () { G.Router.go('#/tables'); });
     head.querySelector('#btn-clear-cart').addEventListener('click', function () {
       var c = state.cart;
@@ -10938,6 +11086,7 @@ button.op-opt:active{ transform:scale(.985); }
               '<div style="font-size:13px;color:var(--muted);font-weight:600;">当前消费</div>' +
               '<div style="font-size:30px;font-weight:900;color:var(--primary);margin-top:4px;">RM ' + U.formatMoneyPlain(total) + '</div>' +
               '<div style="font-size:12px;color:var(--muted);margin-top:4px;">' + cart.items.length + ' 项菜品 · ' + U.escapeHTML(cart.payMethod || 'CASH') + '</div>' +
+              (cart.note ? '<div style="margin-top:8px;background:#FFF7ED;border:1px solid #FED7AA;color:#9A3412;font-weight:800;font-size:13px;padding:8px 10px;border-radius:10px;text-align:left;word-break:break-word;">📝 ' + U.escapeHTML(cart.note) + '</div>' : '') +
             '</div>' +
           '</div>' +
           '<div class="modal-foot">' +
