@@ -725,10 +725,30 @@ svg{ display:block; }
   .order-checkout.open .ck-h-arrow{ transform:rotate(180deg); }
   /* 折叠：隐藏整张购物车，只留把手 + 底部结算；展开：上滑显示 */
   .ck-sheet-body{ display:none; }
-  .order-checkout.open{ flex:0 0 auto; max-height:88vh; }
+  /* 展开：占满整块点餐区（比原来的 88vh 更高，能看到更多已点菜品）。
+     不再写死 88vh / 60vh —— 手机浏览器的地址栏会让 vh 大于实际可视高度，
+     底部「挂单 / 下单收银」被顶出可视区后，会被 .order-body 的 overflow:hidden 裁掉，点不到。
+     改成 flex 分配：抽屉吃掉 100% 空间、上方菜品区压到 0，
+     购物车列表自己滚动，底部结算永远贴着抽屉底边，一定点得到。 */
+  .order-checkout.open{ flex:1 1 100%; max-height:none; }
   .order-checkout.open .ck-sheet-body{
-    display:flex; overflow-y:auto; -webkit-overflow-scrolling:touch; max-height:60vh;
+    display:flex; overflow-y:auto; -webkit-overflow-scrolling:touch;
   }
+  /* Android 全面屏的手势导航栏（HONOR X9C 这类）会盖住屏幕最底部一条，
+     底部结算区必须留出安全区，否则「挂单 / 下单收银」会被系统手势条压住、点不到。
+     viewport 已设 viewport-fit=cover，env() 才拿得到值；桌面 / 平板该值为 0，无副作用。 */
+  .ck-foot{ padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px)); }
+
+  /* v17：抽屉展开 = 沉浸式看整张购物车，底部 Tab 栏滑下去让位，
+     多出 62px（+ 安全区）给已点菜品；收起抽屉它立刻滑回来。
+     用 transform 而不是 display:none：Tab 栏只是滑出屏幕、DOM 还在，
+     收起时不会重排抖动，也不会影响「当前页高亮」这类状态。 */
+  #tabbar{ transition:transform .22s ease; }
+  body.ck-open #tabbar{ transform:translateY(calc(100% + var(--safe-b))); }
+  /* Tab 栏让位后，页面底部那 62px 占位也一并撤掉，否则只是留白、抽屉拿不到高度 */
+  body.ck-open .page{ padding-bottom:calc(10px + var(--safe-b)); }
+  /* Toast 原本贴着 Tab 栏上方，Tab 收起后跟着降下来，避免飘在屏幕中间 */
+  body.ck-open #toast-root{ bottom:calc(var(--safe-b) + 18px); }
 }
 
 /* ==========================================================================
@@ -7622,6 +7642,9 @@ button.op-opt:active{ transform:scale(.985); }
       foot.appendChild(tip);
       checkout.appendChild(foot);
       handle.addEventListener('click', toggleCartDrawer);
+      /* 抽屉内容重建后同步一次沉浸态：
+         万一 body 上残留 .ck-open（比如从别处异常退出），底部 Tab 栏会一直藏着回不来。 */
+      setDrawer(checkout.classList.contains('open'));
 
       // 事件
       if (c.kind !== 'takeaway') {
@@ -7795,9 +7818,17 @@ button.op-opt:active{ transform:scale(.985); }
         '<svg class="ck-h-arrow" viewBox="0 0 24 24" width="18" height="18"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     }
 
-    /* 手机端：点把手展开 / 收起购物车抽屉 */
+    /* 手机端：点把手展开 / 收起购物车抽屉
+       v17：展开时同步给 body 加 .ck-open —— CSS 会把底部 Tab 栏滑下去让位，
+       抽屉多拿 62px 高度。桌面 / 平板没有 Tab 栏，这个 class 不产生任何效果。 */
     function toggleCartDrawer() {
-      checkout.classList.toggle('open');
+      setDrawer(!checkout.classList.contains('open'));
+    }
+
+    function setDrawer(open) {
+      if (!checkout) return;
+      checkout.classList.toggle('open', !!open);
+      document.body.classList.toggle('ck-open', !!open);
     }
 
     /* ---------------- 菜单 ---------------- */
@@ -13350,6 +13381,8 @@ button.op-opt:active{ transform:scale(.985); }
     highlight(id);
     var root = document.getElementById('view-root');
     root.innerHTML = '';
+    // 离开页面时清掉点餐页的「抽屉沉浸态」（.ck-open）：不清的话底部 Tab 栏会一直藏着不回来
+    document.body.classList.remove('ck-open');
     var view = (G.Views && G.Views[id]) || G.Views.home;
     try { view.render(root, parsed.params); }
     catch (e) { console.error(e); U.toast('页面加载失败：' + e.message, 'err'); }
