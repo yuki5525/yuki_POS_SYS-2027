@@ -1777,21 +1777,11 @@ button.op-opt:active{ transform:scale(.985); }
     return out;
   };
 
-  /* 开关开着但等级表被清空了 → 等同没开，点餐弹窗整块不渲染 */
-  U.spicyEnabled = function (menu, cfg) {
-    if (!menu || !menu.enableSpicy) return false;
-    return U.spicyLevels(cfg).length > 0;
-  };
-
-  /* 这道菜默认预选哪一级：菜上配了默认辣度且还在等级表里就用它，否则退回第一级。
-     返回 null = 这道菜不问辣度，调用方据此整块不渲染。 */
-  U.spicyDefault = function (menu, cfg) {
-    if (!U.spicyEnabled(menu, cfg)) return null;
-    var lv = U.spicyLevels(cfg);
-    var want = String(menu.defaultSpicy || '').trim();
-    if (want && lv.indexOf(want) >= 0) return want;
-    return lv[0];
-  };
+  /* v15：删掉了 U.spicyEnabled / U.spicyDefault。
+     辣度改为全局统一口径：只要「设置 → 辣度等级」里有等级，所有菜点餐时都能选，
+     且统一默认第一级（无辣），需要时客人才往上加。
+     所以不再需要每道菜的 enableSpicy 开关、也不再有每道菜的 defaultSpicy 默认级。
+     点餐页直接用 U.spicyLevels(cfg)，等级表为空就整块不渲染。 */
 
   /* 快照文案：小票 / PDF / 购物车行统一用它，口径一致 */
   U.spicyText = function (it) {
@@ -7612,6 +7602,11 @@ button.op-opt:active{ transform:scale(.985); }
       noteEl.value = c.note || '';
       noteEl.addEventListener('input', function () { c.note = noteEl.value; persist(); });
 
+      /* v15 修复：上一版只 append 了 handle 和 foot，漏了把 sheet 挂回 checkout，
+         导致整个购物车（含已点菜品）活在游离的 DOM 碎片里 —— 桌面端「点了什么不见了」、
+         手机端「展开抽屉看不到菜」都是这一个原因。挂回去，顺序：handle → sheet → foot。 */
+      checkout.appendChild(sheet);
+
       var foot = U.el('div', { class: 'ck-foot' });
       var totalRow = U.el('div', { class: 'ck-total-row' });
       totalRow.innerHTML = '<span class="lbl">合计</span><span class="val" id="ck-total">RM 0.00</span>';
@@ -9555,18 +9550,12 @@ button.op-opt:active{ transform:scale(.985); }
                 '</div>' +
               '</div>' +
               /* ---- 辣度 ----
-                 等级表是全局的（在设置页维护），这里只管「这道菜问不问」和默认选哪级。 */
+                 v15：辣度改为全局统一，不再逐道菜开关 / 配默认级（点餐页已不看这两个字段）。
+                 这里只留一句指引，免得以为辣度功能没了。 */
               '<div class="field"><label>辣度</label>' +
-                '<div class="switch" id="m-spicy-on">' +
-                  '<div><div class="sw-label">提供辣度选择</div>' +
-                    '<div class="sw-desc">开启后，点这道菜时可单选辣度（等级表在「设置」里维护）</div></div>' +
-                  '<div class="sw-track"></div>' +
-                '</div>' +
-                '<div id="m-spicy-body" style="display:none;">' +
-                  '<div style="margin-top:8px;">' +
-                    '<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">默认辣度（客人不换就用这个）</div>' +
-                    '<select class="select" id="m-spicy-default"></select>' +
-                  '</div>' +
+                '<div style="font-size:12px;color:var(--muted);line-height:1.5;">' +
+                  '所有菜品点餐时都能选辣度，默认「无辣」。<br>' +
+                  '等级名称在「设置 → 辣度等级」统一维护。' +
                 '</div>' +
               '</div>' +
               '<div class="field"><label>菜品实拍照片（可选，用于 PDF 报告）</label>' +
@@ -9755,33 +9744,8 @@ button.op-opt:active{ transform:scale(.985); }
         syncStapleOn();
 
         /* ---- 辣度 ----
-           默认关：老菜品没有 enableSpicy → undefined → 关，现有点餐流程不受影响。
-           等级表被清空时开关作废，避免点餐弹窗冒出一个空的辣度行。 */
-        var spicyOn = m.querySelector('#m-spicy-on');
-        var spicyBody = m.querySelector('#m-spicy-body');
-        var spicySel = m.querySelector('#m-spicy-default');
-        var spicyLv = U.spicyLevels(G.App.cfg.all());
-        spicySel.innerHTML = spicyLv.length
-          ? spicyLv.map(function (lv) {
-              return '<option value="' + U.escapeHTML(lv) + '">' + U.escapeHTML(lv) + '</option>';
-            }).join('')
-          : '<option value="">（等级表为空，请先到「设置」添加）</option>';
-        spicySel.value = (menu.defaultSpicy && spicyLv.indexOf(menu.defaultSpicy) >= 0)
-          ? menu.defaultSpicy : (spicyLv[0] || '');
-        if (menu.enableSpicy && spicyLv.length) spicyOn.classList.add('on');
-        if (!spicyLv.length) {
-          spicyOn.style.opacity = '0.45';
-          spicyOn.title = '等级表为空，请先到「设置 → 辣度等级」添加';
-        }
-        function syncSpicyOn() {
-          spicyBody.style.display = spicyOn.classList.contains('on') ? '' : 'none';
-        }
-        spicyOn.addEventListener('click', function () {
-          if (!spicyLv.length) { U.toast('请先在「设置 → 辣度等级」里添加等级', 'err'); return; }
-          spicyOn.classList.toggle('on');
-          syncSpicyOn();
-        });
-        syncSpicyOn();
+           v15：逐菜的辣度开关 / 默认级已移除，点餐页不再读 enableSpicy、defaultSpicy，
+           所以这里没有任何绑定逻辑；老数据里残留的这两个字段不影响使用。 */
 
         /* 拖拽排序：算出鼠标落在哪一行中线之上，就插到那行前面 */
         stapleListDiv.addEventListener('dragover', function (e) {
@@ -9863,9 +9827,8 @@ button.op-opt:active{ transform:scale(.985); }
             enableStapleReplace: enableStaple,
             defaultStaple: defStaple,
             stapleList: stapleRows,
-            /* 辣度：开关关着也把默认等级存下来，重新打开不用再挑一次 */
-            enableSpicy: spicyOn.classList.contains('on'),
-            defaultSpicy: spicySel.value || '',
+            /* v15：不再存 enableSpicy / defaultSpicy —— 点餐统一按全局等级表走。
+               老数据里残留的这两个字段不影响使用，下次保存这道菜时会被清掉。 */
             categoryId: selCat.value,
             subCategoryId: selSub.value || '',
             thirdCategoryId: selThird.value || '',
